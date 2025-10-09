@@ -1,19 +1,22 @@
-interface ApiResponseInterface{
-    statusCode:number,
-    data:any,
-    message:string
-}
+// export interface ApiResponseInterface{
+//     statusCode:number,
+//     data:any,
+//     message:string
+//     success?:boolean
+// }
 
-class ApiResponse{
+class ApiResponse <T>{
     statusCode:number
-    data:any
+    data:T | null
     message:string
-    constructor(statusCode:number, data:any, message:string="Success", 
+    success?:boolean
+    constructor(statusCode:number, data:any, message:string="Success"
     )
    {
         this.statusCode=statusCode
         this.data=data
         this.message=message
+        this.success=statusCode<400
     }
 }
 
