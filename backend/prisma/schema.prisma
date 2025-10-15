@@ -15,11 +15,169 @@ datasource db {
 }
 
 
-model Former {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  
-  createdAt DateTime @default(now())
+// =============== Enums ===============
+enum FieldPlanStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
 }
 
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  CANCELLED
+}
+
+enum LeaseModelType {
+  STANDARD
+  HYBRID
+}
+
+// =============== farmer ===============
+model farmer {
+  farmer_id    String @id @default(uuid())
+  username     String
+  password     String
+  email        String
+  fullname     String
+  // phone numbers are safer as String even if your ERD said "number"
+  phone_number String?
+  // ERD had "stringff" — using String here
+  address      String?
+
+  fields       field[]
+  orders       order[]
+}
+
+// =============== field ===============
+model field {
+  field_id        String  @id @default(uuid())
+  farmer_id       String
+  land_image      String?
+  land_type       String?
+  current_crop    String?
+  soil_type       String?
+  survey_number   Int?
+  acres           Decimal? @db.Decimal(10, 2)
+  irrigation_type String?
+
+  farmer          farmer  @relation(fields: [farmer_id], references: [farmer_id])
+  plans           field_season_plan[]
+  recommendations recommendation[]
+  snapshots       field_snapshot[]
+  leases          lease[]
+}
+
+// =============== crop ===============
+model crop {
+  crop_id  String @id @default(uuid())
+  name     String
+  category String?
+
+  plans          field_season_plan[]
+  recommended_by recommendation[] @relation("RecommendedCrop")
+}
+
+// =============== season ===============
+model season {
+  season_id  String   @id @default(uuid())
+  name       String
+  start_date DateTime
+  end_date   DateTime
+
+  plans           field_season_plan[]
+  recommendations recommendation[]
+}
+
+// =============== field_season_plan ===============
+model field_season_plan {
+  plan_id       String          @id @default(uuid())
+  field_id      String
+  season_id     String
+  crop_id       String
+  expected_yield Decimal?       @db.Decimal(12, 2)
+  expected_cost  Decimal?       @db.Decimal(12, 2)
+  status         FieldPlanStatus
+
+  field   field  @relation(fields: [field_id], references: [field_id])
+  season  season @relation(fields: [season_id], references: [season_id])
+  crop    crop   @relation(fields: [crop_id], references: [crop_id])
+}
+
+// =============== recommendation ===============
+model recommendation {
+  recommendation_id  String  @id @default(uuid())
+  field_id           String
+  season_id          String
+  recommended_crop_id String
+  rationale_json     Json
+  generated_at       DateTime
+
+  field            field  @relation(fields: [field_id], references: [field_id])
+  season           season @relation(fields: [season_id], references: [season_id])
+  recommended_crop crop   @relation("RecommendedCrop", fields: [recommended_crop_id], references: [crop_id])
+}
+
+// =============== product ===============
+model product {
+  product_id String  @id @default(uuid())
+  name       String
+  category   String?
+  unit       String?
+  price      Decimal @db.Decimal(12, 2)
+  stock      Int
+
+  order_items order_item[]
+}
+
+// =============== order ===============
+model order {
+  order_id  String      @id @default(uuid())
+  farmer_id String
+  status    OrderStatus
+  total     Decimal     @db.Decimal(12, 2)
+  placed_at DateTime
+
+  farmer    farmer      @relation(fields: [farmer_id], references: [farmer_id])
+  items     order_item[]
+}
+
+// =============== order_item ===============
+model order_item {
+  order_item_id String  @id @default(uuid())
+  order_id      String
+  product_id    String
+  qty           Int
+  unit_price    Decimal @db.Decimal(12, 2)
+
+  order   order   @relation(fields: [order_id], references: [order_id])
+  product product @relation(fields: [product_id], references: [product_id])
+}
+
+// =============== field_snapshot (optional) ===============
+model field_snapshot {
+  snapshot_id  String   @id @default(uuid())
+  field_id     String
+  at           DateTime
+  avg_moisture Float?
+  last_ph      Float?
+  soil_temp    Float?
+  notes        String?
+
+  field        field    @relation(fields: [field_id], references: [field_id])
+}
+
+// =============== lease ===============
+model lease {
+  lease_id         String        @id @default(uuid())
+  field_id         String
+  model_type       LeaseModelType
+  profit_share_pct Decimal?      @db.Decimal(5, 2)
+  rent_amount      Decimal       @db.Decimal(12, 2)
+  start_date       DateTime
+  end_date         DateTime?
+  status           String
+
+  field            field         @relation(fields: [field_id], references: [field_id])
+}
