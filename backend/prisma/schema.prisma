@@ -39,7 +39,7 @@ model Farmer {
   farmerId    String  @id @default(uuid())
   email       String  @unique                 // ✅ login/register: email required & unique
   password    String                          // ✅ login/register: password required
-  username    String?                         // optional profile fields
+  username    String                          // optional profile fields
   fullName    String?
   phoneNumber String?
   address     String?
