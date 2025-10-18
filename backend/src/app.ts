@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 
 import errorHandler from "./middlewares/error.middleware";
-import { prisma } from "./db";
 
 const app = express();
 
@@ -20,6 +19,12 @@ app.use(express.urlencoded({extended:true}))
 
 
 // routes
+app.get('/api/v1/healthcheck', (req,res)=>{
+    res.status(200).json({
+        status:"success",
+        message:"API is working fine"
+    })
+})
 app.post('/api/v1/former', )
 
 app.use(errorHandler)
