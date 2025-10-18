@@ -10,6 +10,8 @@ export function generateToken(userId: string): string {
   return jwt.sign(payload, JWT_SECRET, options);
 }
 
+
+
 export const verifyJWT = (token: string): JwtPayload | null => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;

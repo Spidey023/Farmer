@@ -1,0 +1,35 @@
+name: CI (build, validate, test)
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Prisma checks
+        run: |
+          npx prisma generate
+          npx prisma validate
+          npx prisma migrate status
+
+      - name: Typecheck
+        run: npm run typecheck --if-present
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build (TS -> JS)
+        run: npm run build
