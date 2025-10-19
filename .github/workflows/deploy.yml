@@ -14,7 +14,8 @@ jobs:
         with:
           node-version: 18
           cache: "npm"
-
+      - name: corrent dir folders
+        run: ls -la
       - name: Install deps
         run: npm ci
 
