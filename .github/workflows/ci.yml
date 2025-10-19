@@ -1,36 +1,49 @@
 name: CI (build, validate, test)
 
 on:
-  workflow_dispatch:
-  
+  push:
+    branches: ["**"]        # Runs automatically when you push
+  pull_request:              # Runs for PRs
+  workflow_dispatch: {}      # Enables "Run workflow" button in Actions tab
+
+defaults:
+  run:
+    working-directory: backend  # 👈 all steps will run inside /backend folder
 
 jobs:
   ci:
     runs-on: ubuntu-latest
+
     steps:
+      # Step 1. Checkout your code
       - uses: actions/checkout@v4
-      - name: checking the current files
-        run: cd backend
-        
+
+      # Step 2. Setup Node.js + enable caching
       - uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"
+          cache-dependency-path: backend/package-lock.json  # ensures caching uses the backend's lockfile
 
+      # Step 3. Install dependencies
       - name: Install deps
         run: npm ci
 
+      # Step 4. Prisma schema validation
       - name: Prisma checks
         run: |
           npx prisma generate
           npx prisma validate
           npx prisma migrate status
 
+      # Step 5. TypeScript check
       - name: Typecheck
         run: npm run typecheck --if-present
 
+      # Step 6. Linting
       - name: Lint
         run: npm run lint --if-present
 
-      - name: Build (TS -> JS)
+      # Step 7. Build the project
+      - name: Build (TS → JS)
         run: npm run build
