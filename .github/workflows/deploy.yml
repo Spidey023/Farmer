@@ -1,54 +1,18 @@
-name: Build & Deploy (Prod)
+name: CD (Deploy to EC2)
 
 on:
-  push:
-    branches: ["main"]
+  workflow_run:
+    workflows: ["CI (build, validate, test)"]   # 👈 the CI workflow name
+    types: [completed]                          # trigger after CI finishes
+    branches: ["main"]                          # only for main branch
 
 jobs:
-  build_and_push_image:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # 👈 only if CI = success
     runs-on: ubuntu-latest
+
     steps:
-      - name: corrent dir folders
-        run: ls -la
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          cache: "npm"
-
-      - name: Install deps
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Set up Docker buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build & push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository }}/farmland-backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Set IMAGE_TAG
-        run: echo "IMAGE_TAG=ghcr.io/${{ github.repository }}/farmland-backend:${{ github.sha }}" >> $GITHUB_ENV
-
-  deploy_to_ec2:
-    needs: build_and_push_image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to EC2
+      - name: 🚀 Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -56,23 +20,19 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            IMAGE_TAG=${{ env.IMAGE_TAG }}
-            cd /home/ubuntu/farmland-backend
+            echo "=== Connected to EC2 ==="
+            cd /home/ubuntu/farmland-backend || mkdir -p /home/ubuntu/farmland-backend && cd /home/ubuntu/farmland-backend
 
-            # Pull latest image
-            docker pull $IMAGE_TAG
-
-            # Stop old container
-            if [ "$(docker ps -q -f name=api)" ]; then
-              docker stop api && docker rm api
+            if [ ! -d ".git" ]; then
+              git clone git@github.com:Spidey023/Farmer.git .
+            else
+              git fetch origin main
+              git reset --hard origin/main
             fi
 
-            # Run new container
-            docker run -d --name api -p 3000:3000 --env-file .env $IMAGE_TAG
-
-            # Apply DB migrations (DIRECT URL)
+            docker build -t farmer-backend .
+            docker stop api || true
+            docker rm api || true
+            docker run -d --name api -p 3000:3000 --env-file .env farmer-backend
             docker exec api npx prisma migrate deploy
-
-            # Healthcheck
-            sleep 3
             curl -sf http://localhost:3000/health || (docker logs api && exit 1)
