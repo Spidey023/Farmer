@@ -23,45 +23,27 @@ jobs:
               echo "=== Connected to EC2 ==="
               cd /home/ubuntu
             
-              # Make sure the folder exists
-              mkdir -p farmland-backend
-            
-              cd farmland-backend
-            
-              # If repo already exists, pull latest
-              if [ -d ".git" ]; then
-                echo "=== Existing repo detected: pulling latest changes ==="
+              if [ ! -d "farmland-backend" ]; then
+                echo "Cloning fresh repo..."
+                git clone git@github.com:Spidey023/Farmer.git farmland-backend
+              else
+                echo "Updating existing repo..."
+                cd farmland-backend
                 git fetch origin main
                 git reset --hard origin/main
-              else
-                echo "=== No repo found: cleaning code but preserving .env ==="
-                # Preserve .env if it exists
-                if [ -f ".env" ]; then
-                  mv .env /home/ubuntu/.env.bak
-                fi
-            
-                # Remove everything except .env backup
-                rm -rf *
-            
-                # Clone fresh repo
-                git clone git@github.com:Spidey023/Farmer.git .
-                
-                # Restore .env
-                if [ -f "/home/ubuntu/.env.bak" ]; then
-                  mv /home/ubuntu/.env.bak .env
-                fi
               fi
             
+              cd /home/ubuntu/farmland-backend
               echo "=== Building Docker image ==="
-              docker build -t farmer-backend .
+              docker build -t farmer-backend -f backend/Dockerfile backend
             
               echo "=== Restarting container ==="
               docker stop api || true
               docker rm api || true
-              docker run -d --name api -p 3000:3000 --env-file .env farmer-backend
+              docker run -d --name api -p 3000:3000 --env-file backend/.env farmer-backend
             
               echo "=== Running Prisma migrations ==="
               docker exec api npx prisma migrate deploy
             
-              echo "=== Checking API health ==="
+              echo "=== Health check ==="
               curl -sf http://localhost:3000/health || (docker logs api && exit 1)
