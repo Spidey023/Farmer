@@ -1,23 +1,26 @@
-# Base image with Node.js (small Alpine Linux)
+# 1️⃣ Base image
 FROM node:18-alpine
 
-# Create app directory inside the container
+# 2️⃣ Set working directory
 WORKDIR /app
 
-# Copy only package files first for better layer caching
+# 3️⃣ Copy package files first (for dependency install caching)
 COPY package*.json ./
 
-# Install dependencies (uses package-lock.json for reproducible builds)
+# 4️⃣ Copy Prisma schema early (so postinstall can find it)
+COPY prisma ./prisma
+
+# 5️⃣ Install dependencies (will trigger postinstall and run prisma generate)
 RUN npm ci
 
-# Copy the rest of the project
+# 6️⃣ Copy remaining source code
 COPY . .
 
-# Build TypeScript -> JavaScript
+# 7️⃣ Build the TypeScript project
 RUN npm run build
 
-# Expose the app port
+# 8️⃣ Expose port (adjust to your app port)
 EXPOSE 3000
 
-# Start the app (uses compiled JS in /dist)
-CMD ["npm", "run", "start"]
+# 9️⃣ Run the app
+CMD ["npm", "start"]
