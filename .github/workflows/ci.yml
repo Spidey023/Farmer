@@ -45,6 +45,10 @@ jobs:
 
       # Step 5: Prisma schema validation
       - name: Prisma checks
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+          SHADOW_DATABASE_URL: ${{ secrets.SHADOW_DATABASE_URL }}
         run: |
           npx prisma generate
           npx prisma validate
