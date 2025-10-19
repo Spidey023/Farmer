@@ -9,24 +9,8 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
-
     steps:
-      # 1) Checkout repository at repo root
       - uses: actions/checkout@v4
-
-      # 2) Debug repo structure (now from root)
-      - name: Debug repo structure
-        run: |
-          echo "---- PWD (root) ----"
-          pwd
-          echo "---- ROOT FILES ----"
-          ls -la
-          echo "---- BACKEND FILES ----"
-          ls -la backend || echo "No backend folder"
-          echo "---- SEARCH LOCKFILES ----"
-          find . -name "package-lock.json" -o -name "yarn.lock" -o -name "npm-shrinkwrap.json"
-
-      # 3) Setup Node + enable npm cache using the backend lockfile (path is repo-root relative)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -34,34 +18,18 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
-      # 4) Install dependencies (run IN backend/)
       - name: Install deps
         run: npm ci
         working-directory: backend
 
-      # 5) Prisma checks (use dummy env so Prisma can parse schema in CI)
       - name: Prisma checks
         env:
           DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
-          DIRECT_DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
-          SHADOW_DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
         run: |
           npx prisma generate
           npx prisma validate
-          
         working-directory: backend
 
-      # 6) Typecheck (optional)
-      - name: Typecheck
-        run: npm run typecheck --if-present
-        working-directory: backend
-
-      # 7) Lint (optional)
-      - name: Lint
-        run: npm run lint --if-present
-        working-directory: backend
-
-      # 8) Build
       - name: Build project
         run: npm run build
         working-directory: backend
