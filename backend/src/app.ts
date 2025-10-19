@@ -25,7 +25,7 @@ app.get('/api/v1/healthcheck', (req,res)=>{
         message:"API is working fine"
     })
 })
-app.post('/api/v1/former', )
+// app.post('/api/v1/former', )
 
 app.use(errorHandler)
 export default app
