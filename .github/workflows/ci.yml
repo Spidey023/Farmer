@@ -6,44 +6,58 @@ on:
   pull_request:              # Runs for PRs
   workflow_dispatch: {}      # Enables "Run workflow" button in Actions tab
 
+# 👇 change this to your actual folder if needed
 defaults:
   run:
-    working-directory: backend  # 👈 all steps will run inside /backend folder
+    working-directory: backend
 
 jobs:
   ci:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1. Checkout your code
+      # Step 1: Checkout your repo
       - uses: actions/checkout@v4
 
-      # Step 2. Setup Node.js + enable caching
-      - uses: actions/setup-node@v4
+      # Step 2: Debug structure (to confirm where lockfile lives)
+      - name: Debug repo structure
+        run: |
+          echo "---- Current directory ----"
+          pwd
+          echo "---- Root files ----"
+          ls -la
+          echo "---- Backend folder ----"
+          ls -la backend || echo "No backend folder found"
+          echo "---- Searching for package-lock.json ----"
+          find . -name "package-lock.json"
+
+      # Step 3: Setup Node.js with caching
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"
-          cache-dependency-path: backend/package-lock.json  # ensures caching uses the backend's lockfile
+          cache-dependency-path: backend/package-lock.json  # 👈 change this if not in backend
 
-      # Step 3. Install dependencies
+      # Step 4: Install dependencies
       - name: Install deps
         run: npm ci
 
-      # Step 4. Prisma schema validation
+      # Step 5: Prisma schema validation
       - name: Prisma checks
         run: |
           npx prisma generate
           npx prisma validate
           npx prisma migrate status
 
-      # Step 5. TypeScript check
+      # Step 6: TypeScript type checking
       - name: Typecheck
         run: npm run typecheck --if-present
 
-      # Step 6. Linting
+      # Step 7: Lint code
       - name: Lint
         run: npm run lint --if-present
 
-      # Step 7. Build the project
-      - name: Build (TS → JS)
+      # Step 8: Build TS → JS
+      - name: Build project
         run: npm run build
