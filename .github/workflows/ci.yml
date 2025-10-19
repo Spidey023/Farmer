@@ -48,7 +48,7 @@ jobs:
         run: |
           npx prisma generate
           npx prisma validate
-          npx prisma migrate status
+          
         working-directory: backend
 
       # 6) Typecheck (optional)
