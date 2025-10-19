@@ -19,20 +19,27 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            set -e
-            echo "=== Connected to EC2 ==="
-            cd /home/ubuntu/farmland-backend || mkdir -p /home/ubuntu/farmland-backend && cd /home/ubuntu/farmland-backend
+                set -e
+                echo "=== Connected to EC2 ==="
+                cd /home/ubuntu
+              
+                # Clean up old folder if it exists
+                rm -rf farmland-backend
+                mkdir -p farmland-backend
+                cd farmland-backend
+              
+                # Clone fresh repo (first deployment)
+                git clone https://github.com/Spidey023/Farmer.git .
+                
+                echo "=== Building Docker image ==="
+                docker build -t farmer-backend .
+              
+                echo "=== Running container ==="
+                docker run -d --name api -p 3000:3000 --env-file .env farmer-backend
+              
+                echo "=== Applying Prisma migrations ==="
+                docker exec api npx prisma migrate deploy
+              
+                echo "=== Health check ==="
+                curl -sf http://localhost:3000/health || (docker logs api && exit 1)
 
-            if [ ! -d ".git" ]; then
-              git clone git@github.com:Spidey023/Farmer.git .
-            else
-              git fetch origin main
-              git reset --hard origin/main
-            fi
-
-            docker build -t farmer-backend .
-            docker stop api || true
-            docker rm api || true
-            docker run -d --name api -p 3000:3000 --env-file .env farmer-backend
-            docker exec api npx prisma migrate deploy
-            curl -sf http://localhost:3000/health || (docker logs api && exit 1)
