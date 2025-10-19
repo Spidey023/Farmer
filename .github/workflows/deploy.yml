@@ -19,27 +19,49 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-                set -e
-                echo "=== Connected to EC2 ==="
-                cd /home/ubuntu
-              
-                # Clean up old folder if it exists
-                rm -rf farmland-backend
-                mkdir -p farmland-backend
-                cd farmland-backend
-              
-                # Clone fresh repo (first deployment)
+              set -e
+              echo "=== Connected to EC2 ==="
+              cd /home/ubuntu
+            
+              # Make sure the folder exists
+              mkdir -p farmland-backend
+            
+              cd farmland-backend
+            
+              # If repo already exists, pull latest
+              if [ -d ".git" ]; then
+                echo "=== Existing repo detected: pulling latest changes ==="
+                git fetch origin main
+                git reset --hard origin/main
+              else
+                echo "=== No repo found: cleaning code but preserving .env ==="
+                # Preserve .env if it exists
+                if [ -f ".env" ]; then
+                  mv .env /home/ubuntu/.env.bak
+                fi
+            
+                # Remove everything except .env backup
+                rm -rf *
+            
+                # Clone fresh repo
                 git clone https://github.com/Spidey023/Farmer.git .
                 
-                echo "=== Building Docker image ==="
-                docker build -t farmer-backend .
-              
-                echo "=== Running container ==="
-                docker run -d --name api -p 3000:3000 --env-file .env farmer-backend
-              
-                echo "=== Applying Prisma migrations ==="
-                docker exec api npx prisma migrate deploy
-              
-                echo "=== Health check ==="
-                curl -sf http://localhost:3000/health || (docker logs api && exit 1)
-
+                # Restore .env
+                if [ -f "/home/ubuntu/.env.bak" ]; then
+                  mv /home/ubuntu/.env.bak .env
+                fi
+              fi
+            
+              echo "=== Building Docker image ==="
+              docker build -t farmer-backend .
+            
+              echo "=== Restarting container ==="
+              docker stop api || true
+              docker rm api || true
+              docker run -d --name api -p 3000:3000 --env-file .env farmer-backend
+            
+              echo "=== Running Prisma migrations ==="
+              docker exec api npx prisma migrate deploy
+            
+              echo "=== Checking API health ==="
+              curl -sf http://localhost:3000/health || (docker logs api && exit 1)
