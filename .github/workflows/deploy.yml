@@ -44,7 +44,7 @@ jobs:
                 rm -rf *
             
                 # Clone fresh repo
-                git clone https://github.com/Spidey023/Farmer.git .
+                git clone git@github.com:Spidey023/Farmer.git .
                 
                 # Restore .env
                 if [ -f "/home/ubuntu/.env.bak" ]; then
