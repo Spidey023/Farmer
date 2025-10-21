@@ -177,6 +177,6 @@ model Lease {
   startDate      DateTime
   endDate        DateTime?
   status         String
-
+  
   field          Field         @relation(fields: [fieldId], references: [fieldId])
 }

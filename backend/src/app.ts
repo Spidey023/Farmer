@@ -19,8 +19,8 @@ app.use(express.urlencoded({extended:true}))
 
 
 // routes
-app.get('/api/v1/healthcheck', (req,res)=>{
-    res.status(200).json({
+app.get('/api/v1/health', (req,res)=>{
+   return res.status(200).json({
         status:"success",
         message:"API is working fine"
     })
