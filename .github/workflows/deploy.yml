@@ -2,13 +2,13 @@ name: CD (Deploy to EC2)
 
 on:
   workflow_run:
-    workflows: ["CI (build, validate, test)"]   # 👈 the CI workflow name
-    types: [completed]                          # trigger after CI finishes
-    branches: ["main"]                          # only for main branch
+    workflows: ["CI (build, validate, test)"] # 👈 the CI workflow name
+    types: [completed] # trigger after CI finishes
+    branches: ["main"] # only for main branch
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # 👈 only if CI = success
+    if: ${{ github.event.workflow_run.conclusion == 'success' }} # 👈 only if CI = success
     runs-on: ubuntu-latest
 
     steps:
@@ -19,31 +19,44 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-              set -e
-              echo "=== Connected to EC2 ==="
-              cd /home/ubuntu
-            
-              if [ ! -d "farmland-backend" ]; then
-                echo "Cloning fresh repo..."
-                git clone git@github.com:Spidey023/Farmer.git farmland-backend
-              else
-                echo "Updating existing repo..."
-                cd farmland-backend
-                git fetch origin main
-                git reset --hard origin/main
+            set -e
+            echo "=== Connected to EC2 ==="
+            cd /home/ubuntu
+
+            if [ ! -d "farmland-backend" ]; then
+              echo "Cloning fresh repo..."
+              git clone git@github.com:Spidey023/Farmer.git farmland-backend
+            else
+              echo "Updating existing repo..."
+              cd farmland-backend
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
+            cd /home/ubuntu/farmland-backend
+            echo "=== Building Docker image ==="
+            docker build -t farmer-backend -f backend/Dockerfile backend
+
+            echo "=== Restarting container ==="
+            docker stop api || true
+            docker rm api || true
+            docker run -d --name api -p 3000:3000 --env-file backend/.env farmer-backend
+
+            echo "=== Running Prisma migrations ==="
+            docker exec api npx prisma migrate deploy
+
+            echo "=== Health check ==="
+            echo "=== Waiting for health ==="
+            for i in {1..30}; do
+              if curl -fsS http://localhost:3000/health >/dev/null; then
+                echo "Healthy ✅"; break
               fi
-            
-              cd /home/ubuntu/farmland-backend
-              echo "=== Building Docker image ==="
-              docker build -t farmer-backend -f backend/Dockerfile backend
-            
-              echo "=== Restarting container ==="
-              docker stop api || true
-              docker rm api || true
-              docker run -d --name api -p 3000:3000 --env-file backend/.env farmer-backend
-            
-              echo "=== Running Prisma migrations ==="
-              docker exec api npx prisma migrate deploy
-            
-              echo "=== Health check ==="
-              curl -sf http://localhost:3000/health || (docker logs api && exit 1)
+              echo "Not healthy yet... ($i)"; sleep 2
+              docker logs --tail 20 api || true
+              if [ "$i" -eq 30 ]; then
+                echo "Health check failed ❌"
+                docker logs api || true
+                exit 1
+              fi
+            done
+            echo "=== Deployment completed successfully ==="
