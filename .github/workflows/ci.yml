@@ -5,7 +5,7 @@ on:
     branches: ["**"]
   pull_request:
   workflow_dispatch: {}
-  
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -23,12 +23,12 @@ jobs:
         working-directory: backend
 
       - name: Prisma checks
-        env: 
-          DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake" 
-          DIRECT_DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake" 
-          SHADOW_DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake" 
-        run: | 
-          npx prisma generate 
+        env:
+          DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
+          DIRECT_DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
+          SHADOW_DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
+        run: |
+          npx prisma generate
           npx prisma validate
         working-directory: backend
 

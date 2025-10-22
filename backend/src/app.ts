@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 
 import errorHandler from "./middlewares/error.middleware";
+import formerRouter from "./routes/former.routes";
 
 const app = express();
 
@@ -25,7 +26,8 @@ app.get('/api/v1/health', (req,res)=>{
         message:"API is working fine"
     })
 })
-// app.post('/api/v1/former', )
+
+app.post('/api/v1/former', formerRouter)
 
 app.use(errorHandler)
 export default app
