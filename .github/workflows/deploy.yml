@@ -46,4 +46,4 @@ jobs:
             docker exec api npx prisma migrate deploy
 
             echo "=== Health check ==="
-            curl -sf http://localhost:3000/api/v1health || (docker logs api && exit 1)
+            curl -sf http://localhost:3000/api/v1/health || (docker logs api && exit 1)
