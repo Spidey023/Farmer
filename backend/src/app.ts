@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 
 import errorHandler from "./middlewares/error.middleware";
-import formerRouter from "./routes/former.routes";
+import formerRouter from "./routes/user.routes";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -17,7 +18,7 @@ app.use(
 // to handle json data and form data
 app.use(express.json())
 app.use(express.urlencoded({extended:true}))
-
+app.use(cookieParser())
 
 // routes
 app.get('/api/v1/health', (req,res)=>{

@@ -1,23 +1,39 @@
-import jwt, { Secret, SignOptions } from "jsonwebtoken";
-
-const JWT_SECRET: Secret = process.env.JWT_SECRET || "dev-secret"; // or validate and throw if missing
-
-type JwtPayload = { id: string };
-
-export function generateToken(userId: string): string {
-  const payload: JwtPayload = { id: userId };
-  const options: SignOptions = { expiresIn: "1d" }; // string or number are OK
-  return jwt.sign(payload, JWT_SECRET, options);
-}
+import { Request, Response, NextFunction } from "express";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { asyncHandler } from "../utils/ayncHnadler";
+import ApiError from "../utils/ApiError";
+import { prisma } from "../db";
 
 
+export const verifyJWT = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const token =
+    req.cookies?.accessToken ||
+    req.headers.authorization?.replace("Bearer ", "") ||
+    "";
 
-export const verifyJWT = (token: string): JwtPayload | null => {
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    return decoded;
-  } catch (error) {
-    console.error("JWT verification failed:", error);
-    return null;
-  }
-}
+  if (!token) throw new ApiError(401, "Unauthorized");
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || "dev-secret") as JwtPayload;
+    if(!decoded.id){
+        throw new ApiError(401, "Unauthorized");
+    }
+    
+        const user = await prisma.farmer.findUnique({
+            where: {farmerId: decoded.id},
+            select:{farmerId:true, username:true, email:true, password:true}
+        })
+        if(!user){
+            throw new ApiError(401, "Unauthorized");
+        }
+        req.user = {
+            id: user.farmerId,
+            username: user.username,
+            email: user.email,
+            password: user.password
+        }
+        next();
+    } catch (error) {
+        throw new ApiError(401, "Unauthorized");
+    }
+});
