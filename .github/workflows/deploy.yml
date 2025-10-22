@@ -46,17 +46,4 @@ jobs:
             docker exec api npx prisma migrate deploy
 
             echo "=== Health check ==="
-            echo "=== Waiting for health ==="
-            for i in {1..30}; do
-              if curl -fsS http://localhost:3000/health >/dev/null; then
-                echo "Healthy ✅"; break
-              fi
-              echo "Not healthy yet... ($i)"; sleep 2
-              docker logs --tail 20 api || true
-              if [ "$i" -eq 30 ]; then
-                echo "Health check failed ❌"
-                docker logs api || true
-                exit 1
-              fi
-            done
-            echo "=== Deployment completed successfully ==="
+            curl -sf http://localhost:3000/health || (docker logs api && exit 1)
