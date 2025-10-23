@@ -16,19 +16,20 @@ app.use(
 );
 
 // to handle json data and form data
-app.use(express.json())
-app.use(express.urlencoded({extended:true}))
-app.use(cookieParser())
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // routes
-app.get('/api/v1/health', (req,res)=>{
-   return res.status(200).json({
-        status:"success",
-        message:"API is working fine"
-    })
-})
+app.get("/api/v1/health", (req, res) => {
+  return res.status(200).json({
+    status: "success",
+    message: "API is working fine",
+  });
+});
 
-app.post('/api/v1/former', formerRouter)
+// user routes
+app.use("/api/v1/farmer", formerRouter);
 
-app.use(errorHandler)
-export default app
+app.use(errorHandler);
+export default app;
