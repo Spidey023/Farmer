@@ -15,14 +15,16 @@
     "migrate:dev": "prisma migrate dev",
     "migrate:dev:named": "prisma migrate dev --name init",
     "migrate:deploy": "prisma migrate deploy",
-    "seed": "prisma db seed",
+    "seed:admin": "ts-node prisma/seed.admin.ts",
+    "seed:snapshots": "ts-node prisma/seed.snapshots.ts",
+    "seed:recos": "ts-node prisma/seed.recos.ts",
     "check:type": "tsc --noEmit",
     "check:lint": "eslint . --ext .ts",
     "test": "echo \"(no tests yet)\" && exit 0",
     "postinstall": "prisma generate"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.admin.ts"
   },
   "engines": {
     "node": ">=18"
@@ -43,7 +45,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.7.0",
+    "@types/node": "^24.9.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }

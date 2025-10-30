@@ -14,16 +14,17 @@ class ApiError extends Error implements ApiErrorInterface {
 
   constructor(
     statusCode: number,
-    data: any = null,
     message = "Something went wrong",
     errors: any[] = [],
-    stack = ""
+    stack = "",
+    data: any = null
   ) {
     super(message);
     this.name = "ApiError";
     this.statusCode = statusCode;
-    this.data = data;
+    this.message = message;
     this.errors = errors;
+    this.data = data;
 
     if (stack) {
       this.stack = stack;
