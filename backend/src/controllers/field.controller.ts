@@ -228,6 +228,44 @@ const createFieldSnapshot = asyncHandler(
   }
 );
 
+const getSnapshotsByFieldId = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const farmerId = (req as any).user.id;
+    const fieldId = req.params.fieldId;
+
+    if (!farmerId || !fieldId) {
+      throw new ApiError(400, "User or Field not found");
+    }
+
+    // Verify field ownership
+    const field = await prisma.field.findUnique({
+      where: { fieldId: fieldId },
+    });
+
+    if (!field || field.farmerId !== farmerId) {
+      throw new ApiError(
+        404,
+        "Field not found or does not belong to the farmer"
+      );
+    }
+
+    const snapshots = await prisma.fieldSnapshot.findMany({
+      where: { fieldId: fieldId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!snapshots || snapshots.length === 0) {
+      throw new ApiError(404, "No snapshots found for this field");
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, snapshots, "Snapshots retrieved successfully")
+      );
+  }
+);
+
 const createFiedSeasonPlan = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const farmerId = (req as any).user.id;
@@ -338,43 +376,40 @@ const getRecomandationsByFieldId = asyncHandler(
   }
 );
 
-// const getSnapshotsByFieldId = asyncHandler(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     const farmerId = (req as any).user.id;
-//     const fieldId = req.params.fieldId;
+const getSeasonPlansByFieldId = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const farmerId = (req as any).user.id;
+    const fieldId = req.params.fieldId;
 
-//     if (!farmerId || !fieldId) {
-//       throw new ApiError(400, "User or Field not found");
-//     }
-
-//     // Verify field ownership
-//     const field = await prisma.field.findUnique({
-//       where: { fieldId: fieldId },
-//     });
-
-//     if (!field || field.farmerId !== farmerId) {
-//       throw new ApiError(
-//         404,
-//         "Field not found or does not belong to the farmer"
-//       );
-//     }
-
-//     const snapshots = await prisma.fieldSnapshot.findMany({
-//       where: { fieldId: fieldId },
-//       orderBy: { createdAt: "desc" },
-//     });
-
-//     if (!snapshots || snapshots.length === 0) {
-//       throw new ApiError(404, "No snapshots found for this field");
-//     }
-
-//     return res
-//       .status(200)
-//       .json(
-//         new ApiResponse(200, snapshots, "Snapshots retrieved successfully")
-//       );
-//   }
-// );
+    if (!farmerId || !fieldId) {
+      throw new ApiError(400, "User or Field not found");
+    }
+    // Verify field ownership
+    const field = await prisma.field.findUnique({
+      where: { fieldId: fieldId },
+    });
+    if (!field || field.farmerId !== farmerId) {
+      throw new ApiError(
+        404,
+        "Field not found or does not belong to the farmer"
+      );
+    }
+    const plans = await prisma.fieldSeasonPlan.findMany({
+      where: { fieldId: fieldId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        crop: true,
+        season: true,
+      },
+    });
+    if (!plans || plans.length === 0) {
+      throw new ApiError(404, "No season plans found for this field");
+    }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, plans, "Season plans retrieved successfully"));
+  }
+);
 
 export {
   addField,
@@ -382,4 +417,9 @@ export {
   deleteField,
   updateField,
   getFieldById,
+  createFieldSnapshot,
+  getSnapshotsByFieldId,
+  createFiedSeasonPlan,
+  getRecomandationsByFieldId,
+  getSeasonPlansByFieldId,
 };
