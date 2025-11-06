@@ -9,6 +9,7 @@ import fieldRouter from "./routes/field.routes";
 import snapshotRouter from "./routes/snapshot.routes";
 import seasonPlanRouter from "./routes/seasonPlan.routes";
 import recommandationsRouter from "./routes/recommandations.routes";
+import productRouter from "./routes/products.routes";
 
 const app = express();
 
@@ -43,7 +44,7 @@ app.use("/api/v1/field", fieldRouter);
 app.use("/api/v1/snapshot", snapshotRouter);
 app.use("/api/v1/season-plan", seasonPlanRouter);
 app.use("/api/v1/recommandations", recommandationsRouter);
-// app.use('/api/v1/products', productRouter);
+app.use("/api/v1/products", productRouter);
 app.use(errorHandler);
 
 export default app;
