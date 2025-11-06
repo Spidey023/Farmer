@@ -9,7 +9,8 @@ import {
 import { verifyJWT } from "../middlewares/auth.middleware";
 
 const router = express.Router();
-
+// protected routes
+// fields
 router.get("/", verifyJWT, getFieldsByFarmerId);
 router.get("/:fieldId", verifyJWT, getFieldById);
 

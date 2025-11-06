@@ -362,7 +362,7 @@ model OrderItem {
 model FieldSnapshot {
   snapshotId  String       @id @default(uuid())
   fieldId     String
-  at  DateTime?
+  at  DateTime? @default(now())
   soilMoisture   Float?
   avgMoisture Float?
   lastPh Float?
