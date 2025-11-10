@@ -19,4 +19,6 @@ const getAllProducts = asyncHandler(
   }
 );
 
+
+
 export { getAllProducts };

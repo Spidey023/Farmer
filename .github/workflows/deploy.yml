@@ -37,13 +37,19 @@ jobs:
             echo "=== Building Docker image ==="
             docker build -t farmer-backend -f backend/Dockerfile backend
 
-            echo "=== Restarting container ==="
+            echo "=== Running Prisma migrations (one-off) ==="
+            docker run --rm \
+              --env-file /home/ubuntu/farmland-backend/backend/.env \
+              -e NODE_OPTIONS=--max-old-space-size=384 \
+              farmer-backend npx prisma migrate deploy
+
+            echo "=== Restarting API container ==="
             docker stop api || true
             docker rm api || true
-            docker run -d --name api -p 3000:3000 --env-file backend/.env farmer-backend
-
-            echo "=== Running Prisma migrations ==="
-            docker exec api npx prisma migrate deploy
+            docker run -d --name api --restart unless-stopped \
+              -p 3000:3000 \
+              --env-file /home/ubuntu/farmland-backend/backend/.env \
+              farmer-backend
 
             echo "=== Health check ==="
             curl -sf http://localhost:3000/api/v1/health || (docker logs api && exit 1)
