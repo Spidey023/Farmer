@@ -3,7 +3,6 @@ dotenv.config();
 
 import { PrismaClient } from "../generated/prisma";
 
-
 // Prevent creating new PrismaClient instances on every reload in dev
 const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 
