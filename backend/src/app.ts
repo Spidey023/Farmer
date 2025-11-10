@@ -10,6 +10,8 @@ import snapshotRouter from "./routes/snapshot.routes";
 import seasonPlanRouter from "./routes/seasonPlan.routes";
 import recommandationsRouter from "./routes/recommandations.routes";
 import productRouter from "./routes/products.routes";
+import orderRouter from "./routes/order.routes";
+import cartRouter from "./routes/cart.routes";
 
 const app = express();
 
@@ -45,6 +47,8 @@ app.use("/api/v1/snapshot", snapshotRouter);
 app.use("/api/v1/season-plan", seasonPlanRouter);
 app.use("/api/v1/recommandations", recommandationsRouter);
 app.use("/api/v1/products", productRouter);
+app.use("/api/v1/orders", orderRouter);
+app.use("/api/v1/cart", cartRouter);
 app.use(errorHandler);
 
 export default app;
