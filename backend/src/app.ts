@@ -16,9 +16,40 @@ import cartRouter from "./routes/cart.routes";
 const app = express();
 
 // common middlewares
+const allowed = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+// Example .env on EC2 (HTTP testing):
+// CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://<EC2-IP>:3000
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "*",
+    origin(origin, cb) {
+      // Postman/curl have no Origin → allow
+      if (!origin) return cb(null, true);
+      // Strictly allow only the whitelisted ones
+      if (allowed.includes(origin)) return cb(null, true);
+      return cb(new Error(`CORS blocked: ${origin} not in whitelist`));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    // Optional, but handy when debugging cookie issues:
+    // exposedHeaders: ["Set-Cookie"],
+  })
+);
+
+// (optional) respond to preflight explicitly
+app.options(
+  "*",
+  cors({
+    origin(origin, cb) {
+      if (!origin) return cb(null, true);
+      if (allowed.includes(origin)) return cb(null, true);
+      return cb(new Error(`CORS blocked: ${origin} not in whitelist`));
+    },
     credentials: true,
   })
 );
