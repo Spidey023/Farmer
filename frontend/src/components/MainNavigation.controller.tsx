@@ -1,12 +1,31 @@
+import { NavLink } from "react-router-dom";
+
 const MainNavigationController = () => {
   return (
     <>
-      <nav className="text-blue-500 p-4 border-b border-gray-200">
-        <ul>
-          <li>DashBaord</li>
-          <li>Products</li>
-          <li>Cart</li>
-          <li>Profile</li>
+      <nav className="text-blue-500 p-2 border-gray-200 flex space-x-4 justify-between items-center cursor-pointer">
+        <ul className="Logo">
+          <li>logo</li>
+        </ul>
+        <ul className="flex space-x-4 justify-end ">
+          <li>
+            <NavLink to="/">DashBaord</NavLink>{" "}
+          </li>
+          <li>
+            <NavLink to="/products">Products</NavLink>
+          </li>
+          <li>
+            {" "}
+            <NavLink to="/cart">Cart</NavLink>{" "}
+          </li>
+          <li>
+            {" "}
+            <NavLink to="/profile">Profile</NavLink>
+          </li>
+          <li>
+            {" "}
+            <NavLink to="/login">Login</NavLink>
+          </li>
         </ul>
       </nav>
     </>

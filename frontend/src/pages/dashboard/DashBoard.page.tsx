@@ -1,4 +1,4 @@
-import DashBoardComponent from "../../components/DashBoard.component";
+import DashBoardComponent from "../../components/dashboard/DashBoard.component";
 
 const DashBoardPage = () => {
   return <DashBoardComponent />;

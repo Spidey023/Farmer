@@ -18,6 +18,7 @@
     "seed:admin": "ts-node prisma/seed.admin.ts",
     "seed:snapshots": "ts-node prisma/seed.snapshots.ts",
     "seed:recos": "ts-node prisma/seed.recos.ts",
+    "seed:telemetry": "ts-node prisma/seed.telemetry.ts",
     "check:type": "tsc --noEmit",
     "check:lint": "eslint . --ext .ts",
     "test": "echo \"(no tests yet)\" && exit 0",
@@ -32,11 +33,13 @@
   "dependencies": {
     "@prisma/client": "^6.17.1",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.8.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "prisma": "^6.17.1"
   },
   "devDependencies": {
@@ -45,6 +48,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
     "@types/node": "^24.9.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"

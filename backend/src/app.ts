@@ -42,17 +42,17 @@ app.use(
 );
 
 // (optional) respond to preflight explicitly
-app.options(
-  "*",
-  cors({
-    origin(origin, cb) {
-      if (!origin) return cb(null, true);
-      if (allowed.includes(origin)) return cb(null, true);
-      return cb(new Error(`CORS blocked: ${origin} not in whitelist`));
-    },
-    credentials: true,
-  })
-);
+// app.options(
+//   "*",
+//   cors({
+//     origin(origin, cb) {
+//       if (!origin) return cb(null, true);
+//       if (allowed.includes(origin)) return cb(null, true);
+//       return cb(new Error(`CORS blocked: ${origin} not in whitelist`));
+//     },
+//     credentials: true,
+//   })
+// );
 
 // to handle json data and form data
 app.use(express.json());

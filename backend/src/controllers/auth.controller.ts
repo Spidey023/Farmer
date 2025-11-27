@@ -200,26 +200,125 @@ const dashboard = asyncHandler(
       throw new ApiError(400, "User not found");
     }
 
-    // fetch user details
-    const user = await prisma.farmer.findUnique({
-      where: { farmerId: userId },
-      select: {
-        farmerId: true,
-        username: true,
-        email: true,
-        fullName: true,
-        address: true,
-        phoneNumber: true,
-      },
+    const dashboardData = await prisma.$transaction(async (pms) => {
+      // 1) Fetch user with relations
+      const user = await pms.farmer.findUnique({
+        where: { farmerId: userId },
+        select: {
+          farmerId: true,
+          fullName: true,
+          email: true,
+          username: true,
+          phoneNumber: true,
+          address: true,
+          fields: true, // all fields
+          orders: true, // all orders
+        },
+      });
+
+      if (!user) {
+        throw new ApiError(404, "Farmer not found");
+      }
+
+      // 2) Attach crops per field (optional)
+      const fieldsWithCrops = await Promise.all(
+        user.fields.map(async (field) => {
+          if (!field.currentCropId) {
+            // no crop linked to this field
+            return { ...field, crops: [] as any[] };
+          }
+
+          const crops = await pms.crop.findMany({
+            where: { cropId: field.currentCropId ?? undefined }, // 👈 TS-safe
+          });
+
+          return { ...field, crops };
+        })
+      );
+
+      // 3) Return combined dashboard object
+      return {
+        ...user,
+        fields: fieldsWithCrops,
+      };
     });
 
-    const field = await prisma.field.findMany({
-      where: { farmerId: userId },
-    });
-    let data = [{ ...user }, { ...field }];
     return res
       .status(200)
-      .json(new ApiResponse(200, data, "Dashboard data fetched successfully"));
+      .json(
+        new ApiResponse(
+          200,
+          dashboardData,
+          "Dashboard data fetched successfully"
+        )
+      );
+  }
+);
+
+const getWheather = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const apiKey = process.env.OPENWEATHER_API_KEY;
+      console.log(apiKey);
+
+      if (!apiKey) {
+        console.error("Missing OPENWEATHER_API_KEY in .env");
+        return res
+          .status(500)
+          .json({ message: "Server weather config error (no API key)" });
+      }
+
+      const { lat, lon, city } = req.body.params || req.body;
+      console.log(lat, lon, city);
+
+      console.log("RAW API KEY =>", `[${apiKey}]`);
+      console.log("KEY LENGTH =>", apiKey?.length);
+      let url = "https://api.openweathermap.org/data/2.5/weather?units=metric";
+
+      // If latitude & longitude are provided
+      if (lat && lon) {
+        url += `&lat=${lat}&lon=${lon}`;
+      }
+      // If city is provided
+      else if (city) {
+        url += `&q=${city}`;
+      }
+      // Default fallback location
+      else {
+        url += `&q=Binghamton`;
+      }
+
+      url += `&appid=${apiKey}`;
+
+      console.log("Calling weather URL:", url);
+
+      const response = await fetch(url);
+
+      console.log("Weather status:", response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.error("Weather API error body:", errorBody);
+        return res
+          .status(500)
+          .json({ message: "Weather API error", details: errorBody });
+      }
+
+      const data = await response.json();
+
+      return res.json({
+        city: data.name,
+        temp: data.main.temp,
+        feels_like: data.main.feels_like,
+        humidity: data.main.humidity,
+        description: data.weather[0].description,
+        icon: data.weather[0].icon,
+        all: data,
+      });
+    } catch (error) {
+      console.error("Weather Error:", error);
+      return res.status(500).json({ message: "Failed to fetch weather" });
+    }
   }
 );
 // const getAllEnum = asyncHandler(
@@ -249,4 +348,4 @@ const dashboard = asyncHandler(
 //   }
 // );
 
-export { registerFarmer, login, logout, refreshToken, dashboard };
+export { registerFarmer, login, logout, refreshToken, dashboard, getWheather };

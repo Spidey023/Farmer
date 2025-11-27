@@ -63,46 +63,51 @@ const createFiedSeasonPlan = asyncHandler(
     // Implementation for creating season plan goes here
     const planData = req.body;
 
-    const newPlan = await prisma.fieldSeasonPlan.create({
-      data: {
-        fieldId,
-        ...planData,
-      },
-    });
-
-    if (!newPlan) {
-      throw new ApiError(500, "Failed to create field season plan");
-    }
-
-    if (
-      !(newPlan.cropStatus === "HARVESTED" || newPlan.cropStatus === "DAMAGED")
-    ) {
-      await prisma.field.update({
-        where: { fieldId },
+    const plan = await prisma.$transaction(async (pms) => {
+      const newPlan = await pms.fieldSeasonPlan.create({
         data: {
-          currentCrop: {
-            connect: { cropId: newPlan.cropId }, // use your actual unique key name
+          fieldId,
+          ...planData,
+        },
+      });
+
+      if (!newPlan) {
+        throw new ApiError(500, "Failed to create field season plan");
+      }
+
+      if (
+        !(
+          newPlan.cropStatus === "HARVESTED" || newPlan.cropStatus === "DAMAGED"
+        )
+      ) {
+        await prisma.field.update({
+          where: { fieldId },
+          data: {
+            currentCrop: {
+              connect: { cropId: newPlan.cropId }, // use your actual unique key name
+            },
           },
-        },
-      });
-    }
+        });
+      }
 
-    if (
-      newPlan.cropStatus === "HARVESTED" ||
-      newPlan.cropStatus === "DAMAGED"
-    ) {
-      await prisma.field.update({
-        where: { fieldId },
-        data: {
-          currentCrop: undefined,
-        },
-      });
-    }
+      if (
+        newPlan.cropStatus === "HARVESTED" ||
+        newPlan.cropStatus === "DAMAGED"
+      ) {
+        await prisma.field.update({
+          where: { fieldId },
+          data: {
+            currentCrop: undefined,
+          },
+        });
+      }
+      return newPlan;
+    });
 
     return res
       .status(201)
       .json(
-        new ApiResponse(201, newPlan, "Field season plan created successfully")
+        new ApiResponse(201, plan, "Field season plan created successfully")
       );
   }
 );

@@ -7,6 +7,7 @@ import {
   updateField,
 } from "../controllers/field.controller";
 import { verifyJWT } from "../middlewares/auth.middleware";
+import { upload } from "../middlewares/multer.middleware";
 
 const router = express.Router();
 // protected routes
@@ -14,8 +15,13 @@ const router = express.Router();
 router.get("/", verifyJWT, getFieldsByFarmerId);
 router.get("/:fieldId", verifyJWT, getFieldById);
 
-router.post("/create-field", verifyJWT, addField);
-router.patch("/update-field/:fieldId", verifyJWT, updateField);
+router.post("/create-field", verifyJWT, upload.single("landImage"), addField);
+router.patch(
+  "/update-field/:fieldId",
+  verifyJWT,
+  upload.single("landImage"),
+  updateField
+);
 
 router.delete("/delete-field/:fieldId", verifyJWT, deleteField);
 

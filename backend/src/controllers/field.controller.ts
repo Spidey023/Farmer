@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/ayncHnadler";
 import { prisma } from "../db";
 import ApiError from "../utils/ApiError";
 import ApiResponse from "../utils/ApiResponse";
+import { deleteFromCloudinary, uploadeOnCloudinary } from "../utils/cloudinary";
 
 const addField = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -14,8 +15,29 @@ const addField = asyncHandler(
       throw new ApiError(400, "User not found");
     }
 
+    // const file = req.file as
+    //   | { [fieldname: string]: Express.Multer.File[] }
+    //   | undefined;
+
+    const landImagePath =
+      (req as any).file?.path || (req as any).files?.landImage?.[0]?.path;
+
+    if (!landImagePath) throw new ApiError(400, "LandImage path not found");
+
+    // ✅ this is now a string | null
+    let landImageUrl: string | null = null;
+
+    try {
+      landImageUrl = await uploadeOnCloudinary(landImagePath);
+      if (!landImageUrl) {
+        throw new ApiError(500, "Failed to upload land image");
+      }
+    } catch (error) {
+      console.log("error uploading avatar", error);
+      throw new ApiError(500, "failed to upload avatar");
+    }
+
     const {
-      landImage,
       landType,
       currentCrop,
       soilType,
@@ -24,20 +46,28 @@ const addField = asyncHandler(
       irrigationType,
     } = req.body;
 
+    const surveyNumberNum = Number(surveyNumber);
+    const acresNum = Number(acres);
+
+    // Validation
+    if (isNaN(surveyNumberNum))
+      throw new ApiError(400, "Survey number must be a number");
+    if (isNaN(acresNum)) throw new ApiError(400, "Acres must be a number");
     const newField = await prisma.field.create({
       data: {
         farmerId,
-        landImage,
+        landImage: landImageUrl, // ✅ string | null (matches Prisma)
         landType,
         currentCrop,
         soilType,
-        surveyNumber,
-        acres,
+        surveyNumber: surveyNumberNum,
+        acres: acresNum,
         irrigationType,
       },
     });
 
     if (!newField) {
+      await deleteFromCloudinary(landImagePath);
       throw new ApiError(500, "Failed to add field");
     }
 

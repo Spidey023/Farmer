@@ -6,6 +6,7 @@ import {
   refreshToken,
   logout,
   dashboard,
+  getWheather,
 } from "../controllers/auth.controller";
 import { verifyJWT } from "../middlewares/auth.middleware";
 
@@ -17,5 +18,6 @@ router.get("/refresh", refreshToken);
 // protected route
 router.post("/logout", verifyJWT, logout);
 router.get("/dashboard", verifyJWT, dashboard);
+router.post("/weather", verifyJWT, getWheather);
 
 export default router;
