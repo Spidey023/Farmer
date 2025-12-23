@@ -1,6 +1,17 @@
 import Info from "../../ui/Info";
 
-const CropDetailComponent = ({ cropName, season, status, cropStatus }) => {
+type CropProps = {
+  cropName: string;
+  season: string;
+  status: string;
+  cropStatus: string;
+};
+const CropDetailComponent = ({
+  cropName,
+  season,
+  status,
+  cropStatus,
+}: CropProps) => {
   return (
     <>
       <div className="rounded-2xl border bg-white p-6 ">
