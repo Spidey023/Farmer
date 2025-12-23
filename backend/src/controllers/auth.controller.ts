@@ -195,6 +195,8 @@ const refreshToken = asyncHandler(
 const dashboard = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = (req as any).user.id;
+    // const page = Number(req.query.page ?? 1);
+    // const limit = Number(req.query.limit ?? 20);
 
     if (!userId) {
       throw new ApiError(400, "User not found");
@@ -211,8 +213,23 @@ const dashboard = asyncHandler(
           username: true,
           phoneNumber: true,
           address: true,
+          carts: true,
           fields: true, // all fields
-          orders: true, // all orders
+          orders: {
+            select: {
+              orderId: true,
+              farmerId: true,
+              cartId: true,
+              status: true,
+              total: true,
+              placedAt: true,
+              paymentMethod: true,
+              paymentStatus: true,
+              createdAt: true,
+              updatedAt: true,
+              items: true,
+            },
+          }, // all orders
         },
       });
 
@@ -232,14 +249,63 @@ const dashboard = asyncHandler(
             where: { cropId: field.currentCropId ?? undefined }, // 👈 TS-safe
           });
 
-          return { ...field, crops };
+          const fieldSeasonPlan = await pms.fieldSeasonPlan.findMany({
+            where: { fieldId: field.fieldId },
+            include: { season: true },
+          });
+
+          const fieldSnapchat = await pms.fieldSnapshot.findMany({
+            where: { fieldId: field.fieldId },
+            orderBy: { createdAt: "desc" },
+            // skip: (page - 1) * limit,
+            // take: limit,
+            take: 5,
+          });
+
+          const lease = await pms.lease.findMany({
+            where: { fieldId: field.fieldId },
+          });
+
+          return { ...field, crops, fieldSeasonPlan, fieldSnapchat, lease };
         })
       );
+      // cart data
+      // 2) Attach crops per field (optional)
+      const cartWithCartItems = await Promise.all(
+        user.carts.map(async (cart) => {
+          if (!cart.cartId) {
+            // no crop linked to this field
+            return { ...cart, cartItems: [] as any[] };
+          }
+
+          const cartItems = await pms.cartItem.findMany({
+            where: { cartId: cart.cartId ?? undefined }, // 👈 TS-safe
+          });
+
+          return { ...cart, cartItems };
+        })
+      );
+
+      //    const fieldSeasonPlan = await Promise.all(
+      //  await pms.fieldSeasonPlan.findMany({where:{fieldId:user.farmerId}}).map(async (field) => {
+      //     if (!field.currentCropId) {
+      //       // no crop linked to this field
+      //       return { ...field, crops: [] as any[] };
+      //     }
+
+      //     const crops = await pms.crop.findMany({
+      //       where: { cropId: field.currentCropId ?? undefined }, // 👈 TS-safe
+      //     });
+
+      //     return { ...field, crops };
+      //   })
+      // );
 
       // 3) Return combined dashboard object
       return {
         ...user,
         fields: fieldsWithCrops,
+        carts: cartWithCartItems,
       };
     });
 

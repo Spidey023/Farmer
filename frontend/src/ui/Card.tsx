@@ -1,4 +1,4 @@
-import type { Crop } from "../components/dashboard/types/DashBaordTypes";
+import type { Crop } from "../types/type";
 
 type CardData = {
   fieldNumber: number;
@@ -26,7 +26,9 @@ const Card = ({ fieldNumber, landType, cropGrowing, imageUrl }: CardData) => {
             {landType}
           </p>
           <p className="mt-2 text-gray-500">
-            {cropGrowing.map((crop) => crop.name)}
+            {cropGrowing?.length > 0
+              ? cropGrowing.map((crop) => crop.name).join(", ")
+              : "No crops growing"}
           </p>
         </div>
       </div>

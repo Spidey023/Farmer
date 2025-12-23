@@ -7,8 +7,8 @@ import ProductsPage from "./pages/products/Products.page";
 import FieldsPage from "./pages/fields/Fields.page";
 import FarmerPage from "./pages/farmer/Farmer.page";
 import CartPage from "./pages/cart/Cart.page";
-import FeildsComponent from "./components/fields/Fields.Component";
 import FieldsListPage from "./pages/fields/FieldsList.page";
+import FieldDetailComponent from "./components/fields/FieldDetail.Component";
 
 const router = createBrowserRouter([
   {
@@ -18,7 +18,6 @@ const router = createBrowserRouter([
     children: [
       { path: "/", element: <DashBoardPage /> },
       { path: "/products", element: <ProductsPage /> },
-      { path: "/fields", element: <FieldsPage /> },
       { path: "/cart", element: <CartPage /> },
       { path: "/profile", element: <FarmerPage /> },
       {
@@ -26,7 +25,7 @@ const router = createBrowserRouter([
         element: <FieldsPage />,
         children: [
           { path: "fields-list", element: <FieldsListPage /> },
-          { path: ":fieldId", element: <FeildsComponent /> },
+          { path: ":fieldId", element: <FieldDetailComponent /> },
         ],
       },
     ],

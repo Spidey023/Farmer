@@ -1,12 +1,9 @@
 import { createContext, useEffect, useState } from "react";
-import type {
-  FarmerDashboard,
-  FarmerDashboardResponse,
-} from "../../components/dashboard/types/DashBaordTypes";
+import type { DashboardResponse, DashboardData } from "../../types/type";
 import { api } from "../../lib/api";
 
 type FarmerContextValue = {
-  farmerData: FarmerDashboard | null;
+  farmerData: DashboardData | null;
   error: string | null;
 };
 
@@ -14,15 +11,13 @@ type FarmerContextValue = {
 export const FarmerContext = createContext<FarmerContextValue | null>(null);
 
 const FarmerContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const [farmerData, setFarmerData] = useState<FarmerDashboard | null>(null);
+  const [farmerData, setFarmerData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTopStats = async () => {
       try {
-        const response = await api.get<FarmerDashboardResponse>(
-          "/auth/dashboard"
-        );
+        const response = await api.get<DashboardResponse>("/auth/dashboard");
         setFarmerData(response.data.data);
         console.log("Top Stats Data:", response.data);
       } catch (err) {

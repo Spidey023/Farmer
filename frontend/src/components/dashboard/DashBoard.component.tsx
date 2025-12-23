@@ -19,7 +19,7 @@ const DashBoardComponent: React.FC = () => {
   const crops = farmerData.fields.flatMap((field) => field.crops || []);
   return (
     <>
-      <div className="px-4 sm:px-6 md:px-8 lg:px-10 py-6 space-y-6">
+      <div className="px-4 sm:px-3 md:px-4 lg:px-5 space-y-6">
         {/* HEADER */}
         {!error && (
           <TopStats farmerData={farmerData} totalOrders={totalOrders} />

@@ -1,4 +1,4 @@
-import type { Crop } from "./types/DashBaordTypes";
+import type { Crop } from "../../types/type";
 
 const TodayTaskComponent = ({ crops }: { crops: Crop[] }) => {
   console.log(crops);

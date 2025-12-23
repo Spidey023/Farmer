@@ -1,4 +1,4 @@
-import type { FarmerDashboard } from "./types/DashBaordTypes";
+import type { FarmerDashboard } from "../../types/type";
 
 const TopStats = ({
   farmerData,

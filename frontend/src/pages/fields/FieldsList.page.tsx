@@ -1,4 +1,4 @@
-import FieldsListComponent from "../../components/fields/fieldsList.component";
+import FieldsListComponent from "../../components/fields/FieldsList.component";
 
 const FieldsListPage = () => {
   return (

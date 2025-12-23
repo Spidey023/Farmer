@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import getLocation from "../../utils/getLocation";
 import TodayTaskComponent from "./TodayTaskComponent";
-import type { Crop } from "./types/DashBaordTypes";
+import type { Crop } from "../../types/type";
 
 type WeatherData = {
   city: string;

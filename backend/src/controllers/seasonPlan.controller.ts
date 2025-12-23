@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/ayncHnadler";
 import { prisma } from "../db";
 import ApiError from "../utils/ApiError";
 import ApiResponse from "../utils/ApiResponse";
+import { CropStatus, FieldPlanStatus, Prisma } from "../generated/prisma";
 
 const getSeasonPlansByFieldId = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -112,18 +113,115 @@ const createFiedSeasonPlan = asyncHandler(
   }
 );
 
+// const updateFieldSeasonPlan = asyncHandler(
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     const farmerId = (req as any).user.id;
+//     const planId = req.params.planId;
+
+//     if (!farmerId || !planId) {
+//       throw new ApiError(400, "User or Plan not found");
+//     }
+
+//     // Fetch the plan to verify ownership via field
+//     const existingPlan = await prisma.fieldSeasonPlan.findUnique({
+//       where: { planId: planId },
+//       include: { field: true },
+//     });
+
+//     if (!existingPlan || existingPlan.field.farmerId !== farmerId) {
+//       throw new ApiError(
+//         404,
+//         "Plan not found or does not belong to the farmer"
+//       );
+//     }
+
+//     const updatedPlan = await prisma.fieldSeasonPlan.update({
+//       where: { planId: planId },
+//       data: { ...req.body },
+//     });
+
+//     if (!updatedPlan) {
+//       throw new ApiError(500, "Failed to update field season plan");
+//     }
+
+//     // Update currentCrop in Field if necessary
+//     if (
+//       !(
+//         updatedPlan.cropStatus === "HARVESTED" ||
+//         updatedPlan.cropStatus === "DAMAGED"
+//       )
+//     ) {
+//       await prisma.field.update({
+//         where: { fieldId: updatedPlan.fieldId },
+//         data: {
+//           currentCrop: {
+//             connect: { cropId: updatedPlan.cropId },
+//           },
+//         },
+//       });
+//     }
+
+//     if (
+//       updatedPlan.cropStatus === "HARVESTED" ||
+//       updatedPlan.cropStatus === "DAMAGED"
+//     ) {
+//       await prisma.field.update({
+//         where: { fieldId: updatedPlan.fieldId },
+//         data: {
+//           currentCrop: { disconnect: true },
+//         },
+//       });
+//     }
+
+//     return res
+//       .status(200)
+//       .json(
+//         new ApiResponse(
+//           200,
+//           updatedPlan,
+//           "Field season plan updated successfully"
+//         )
+//       );
+//   }
+// );
+
+type UpdateSeasonPlanBody = Partial<{
+  // relation keys coming from client:
+  cropId: string;
+  seasonId: string;
+
+  expectedYield: string | null;
+  expectedCost: string | null;
+
+  status: FieldPlanStatus;
+  cropStatus: CropStatus;
+
+  sowingDate: string | null;
+  expectedEndDate: string | null;
+  actualEndDate: string | null;
+}>;
+
+const isEndedCropStatus = (cs?: CropStatus | null) =>
+  cs === "HARVESTED" || cs === "DAMAGED";
+
+const mapCropStatusToPlanStatus = (cropStatus: CropStatus) => {
+  if (cropStatus === "HARVESTED") return "COMPLETED" as const;
+  if (cropStatus === "DAMAGED") return "COMPLETED" as const; // or "CANCELLED"
+  return "ACTIVE" as const;
+};
+
 const updateFieldSeasonPlan = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const farmerId = (req as any).user.id;
-    const planId = req.params.planId;
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const farmerId = (req as any).user?.id as string | undefined;
+    const planId = req.params.planId as string | undefined;
 
     if (!farmerId || !planId) {
       throw new ApiError(400, "User or Plan not found");
     }
 
-    // Fetch the plan to verify ownership via field
+    // Verify ownership
     const existingPlan = await prisma.fieldSeasonPlan.findUnique({
-      where: { planId: planId },
+      where: { planId },
       include: { field: true },
     });
 
@@ -134,43 +232,110 @@ const updateFieldSeasonPlan = asyncHandler(
       );
     }
 
-    const updatedPlan = await prisma.fieldSeasonPlan.update({
-      where: { planId: planId },
-      data: { ...req.body },
+    const body = req.body as UpdateSeasonPlanBody;
+
+    // ✅ Lock COMPLETED/CANCELLED plans (recommended)
+    if (existingPlan.status === "COMPLETED") {
+      throw new ApiError(400, "Completed/Cancelled plans cannot be modified");
+    }
+
+    // ✅ If ACTIVE: disallow changing crop/season (recommended)
+    if (existingPlan.status === "ACTIVE") {
+      if (body.cropId) {
+        throw new ApiError(400, "Cannot change crop while plan is ACTIVE");
+      }
+      if (body.seasonId) {
+        throw new ApiError(400, "Cannot change season while plan is ACTIVE");
+      }
+    }
+
+    // ✅ If plan already ended by cropStatus (extra guard)
+    if (
+      isEndedCropStatus(existingPlan.cropStatus) &&
+      (body.cropStatus ||
+        body.cropId ||
+        body.seasonId ||
+        body.sowingDate ||
+        body.expectedEndDate ||
+        body.actualEndDate)
+    ) {
+      throw new ApiError(
+        400,
+        "Cannot change crop/season/status/dates after plan ended"
+      );
+    }
+
+    // ✅ Decide next status: derive from cropStatus if provided; else keep current
+    let nextStatus: FieldPlanStatus | undefined;
+
+    if (body.cropStatus) {
+      nextStatus = mapCropStatusToPlanStatus(body.cropStatus);
+    } else if (body.status) {
+      // Optional: allow manual status updates with rule
+      if (
+        body.status === "COMPLETED" &&
+        !isEndedCropStatus(existingPlan.cropStatus)
+      ) {
+        throw new ApiError(
+          400,
+          "Cannot mark plan COMPLETED unless cropStatus is HARVESTED or DAMAGED"
+        );
+      }
+      nextStatus = body.status;
+    }
+
+    // ✅ Build Prisma update data safely (no spreading req.body)
+    // IMPORTANT: update relations via connect (NOT seasonId/cropId directly)
+    const data: Prisma.FieldSeasonPlanUpdateInput = {
+      ...(body.expectedYield !== undefined
+        ? { expectedYield: body.expectedYield }
+        : {}),
+      ...(body.expectedCost !== undefined
+        ? { expectedCost: body.expectedCost }
+        : {}),
+      ...(body.sowingDate !== undefined ? { sowingDate: body.sowingDate } : {}),
+      ...(body.expectedEndDate !== undefined
+        ? { expectedEndDate: body.expectedEndDate }
+        : {}),
+      ...(body.actualEndDate !== undefined
+        ? { actualEndDate: body.actualEndDate }
+        : {}),
+      ...(body.cropStatus !== undefined ? { cropStatus: body.cropStatus } : {}),
+
+      ...(nextStatus ? { status: nextStatus } : {}),
+
+      // Only allowed when PLANNED due to guards above
+      ...(body.seasonId
+        ? { season: { connect: { seasonId: body.seasonId } } }
+        : {}),
+      ...(body.cropId ? { crop: { connect: { cropId: body.cropId } } } : {}),
+    };
+
+    const updatedPlan = await prisma.$transaction(async (tx) => {
+      const plan = await tx.fieldSeasonPlan.update({
+        where: { planId },
+        data,
+      });
+
+      const ended = isEndedCropStatus(plan.cropStatus);
+
+      // ✅ Keep Field.currentCrop synced
+      if (!ended) {
+        // When plan is active/in-progress, keep current crop connected
+        await tx.field.update({
+          where: { fieldId: plan.fieldId },
+          data: { currentCrop: { connect: { cropId: plan.cropId } } },
+        });
+      } else {
+        // When plan ends, remove current crop from field
+        await tx.field.update({
+          where: { fieldId: plan.fieldId },
+          data: { currentCrop: { disconnect: true } },
+        });
+      }
+
+      return plan;
     });
-
-    if (!updatedPlan) {
-      throw new ApiError(500, "Failed to update field season plan");
-    }
-
-    // Update currentCrop in Field if necessary
-    if (
-      !(
-        updatedPlan.cropStatus === "HARVESTED" ||
-        updatedPlan.cropStatus === "DAMAGED"
-      )
-    ) {
-      await prisma.field.update({
-        where: { fieldId: updatedPlan.fieldId },
-        data: {
-          currentCrop: {
-            connect: { cropId: updatedPlan.cropId },
-          },
-        },
-      });
-    }
-
-    if (
-      updatedPlan.cropStatus === "HARVESTED" ||
-      updatedPlan.cropStatus === "DAMAGED"
-    ) {
-      await prisma.field.update({
-        where: { fieldId: updatedPlan.fieldId },
-        data: {
-          currentCrop: { disconnect: true },
-        },
-      });
-    }
 
     return res
       .status(200)

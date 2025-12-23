@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import type { Field, Order } from "./types/DashBaordTypes";
+import type { Field, Order } from "../../types/type";
 
 const FieldsAndOrder = ({
   fields,

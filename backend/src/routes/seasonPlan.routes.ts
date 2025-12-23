@@ -9,6 +9,6 @@ const router = express.Router();
 
 // field season plans
 router.post("/:fieldId/create-season-plan", verifyJWT, createFiedSeasonPlan);
-router.get("/:fieldId/season-plans", verifyJWT, getSeasonPlansByFieldId);
+router.get("/:fieldId", verifyJWT, getSeasonPlansByFieldId);
 
 export default router;
