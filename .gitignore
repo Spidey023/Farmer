@@ -1,0 +1,18 @@
+# === Backend ===
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/.env.local
+backend/.env.*.local
+
+# === Logs ===
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+
+# === Prisma ===
+backend/prisma/dev.db
+
+# === System Files ===
+.DS_Store
+Thumbs.db

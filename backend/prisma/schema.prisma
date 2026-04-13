@@ -1,0 +1,671 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ========================
+// Enums
+// ========================
+
+enum LandType {
+  AGRICULTURAL
+  HORTICULTURAL
+  PASTURE
+  WASTELAND
+  PLANTATION
+  ORCHARD
+  AQUACULTURE
+  OTHER
+}
+
+enum IrrigationType {
+  NONE
+  MANUAL
+  DRIP
+  SPRINKLER
+  FLOOD
+  CANAL
+  RAINFED
+  OTHER
+}
+
+enum SoilType {
+  CLAY
+  SANDY
+  SILTY
+  PEATY
+  CHALKY
+  LOAMY
+  RED
+  BLACK
+  LATERITE
+  SALINE
+  OTHER
+}
+
+enum FieldPlanStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum LeaseModelType {
+  STANDARD
+  HYBRID
+}
+
+enum CropCategory {
+  CEREAL
+  PULSE
+  OILSEED
+  FRUIT
+  VEGETABLE
+  SPICE
+  FIBER
+  PLANTATION
+  FLORICULTURE
+  OTHER
+}
+
+enum SeasonType {
+  KHARIF
+  RABI
+  ZAID
+  SUMMER
+  WINTER
+  AUTUMN
+  OTHER
+}
+
+enum ProductCategory {
+  SEEDS
+  FERTILIZER
+  PESTICIDE
+  EQUIPMENT
+  IRRIGATION
+  TOOL
+  HARVEST
+  OTHER
+}
+
+enum LeaseStatus {
+  ACTIVE
+  TERMINATED
+  EXPIRED
+  PENDING
+  CANCELLED
+}
+
+enum FieldQuality {
+  GOOD
+  MODERATE
+  POOR
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  WALLET
+  NETBANKING
+}
+
+enum PaymentStatus {
+  INITIATED
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum CropStatus {
+  SOWN
+  GERMINATED
+  VEGETATIVE
+  FLOWERING
+  HARVEST_READY
+  HARVESTED
+  DAMAGED
+}
+
+enum RecommendationSource {
+  AI
+  EXPERT
+  HYBRID
+}
+
+
+enum UserRole {
+  FARMER
+  ADMIN
+}
+
+enum LeaseApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum WalletTxType {
+  CREDIT
+  DEBIT
+}
+
+enum PaymentProvider {
+  OFFLINE
+  STRIPE
+  RAZORPAY
+}
+
+
+// ========================
+// Models
+// ========================
+
+
+model Tenant {
+  tenantId  String   @id @default("default")
+  name      String
+  description String?
+  imageUrl    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  farmers Farmer[]
+  fields  Field[]
+  crops   Crop[]
+  seasons Season[]
+  products Product[]
+  orders  Order[]
+  carts   Cart[]
+  leases  Lease[]
+  plans   FieldSeasonPlan[]
+  recommendations Recommendation[]
+  wallets Wallet[]
+  walletTransactions WalletTransaction[]
+  refreshTokens RefreshToken[]
+}
+
+
+/**
+ * =============== Farmer ===============
+ */
+model Farmer {
+  farmerId     String  @id @default(uuid())
+  tenantId     String  @default("default")
+  role         UserRole @default(FARMER)
+  email        String  @unique
+  password     String
+  username     String  @unique
+  fullName     String?
+  phoneNumber  String?
+  address      String?
+  refreshToken String?
+
+  // optional geo for smarter recos later
+  region String?
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [tenantId])
+  wallet Wallet?
+  refreshTokens RefreshToken[]
+  approvedLeases Lease[] @relation("LeaseApprovedBy")
+
+  fields Field[]
+  orders Order[]
+  carts  Cart[]
+}
+
+/**
+ * =============== Field ===============
+ */
+model Field {
+  fieldId        String         @id @default(uuid())
+  tenantId       String         @default("default")
+  farmerId       String
+  landImage      String?
+  landType       LandType       @default(AGRICULTURAL)
+  // NEW: current crop as a real relation
+  currentCropId  String?
+  currentCrop    Crop?          @relation("FieldCurrentCrop", fields: [currentCropId], references: [cropId])
+  soilType       SoilType       @default(OTHER)
+  surveyNumber   Int
+  acres          Decimal        @db.Decimal(10, 2)
+  irrigationType IrrigationType @default(NONE)
+  region         String? // optional, for template matching
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant     Tenant            @relation(fields: [tenantId], references: [tenantId])
+  farmer     Farmer            @relation(fields: [farmerId], references: [farmerId])
+  plans      FieldSeasonPlan[]
+  orderItems OrderItem[] // 👈 back-relation here
+
+  recommendations Recommendation[]
+  snapshots       FieldSnapshot[]
+  leases          Lease[]
+  cartItems       CartItem[]
+
+  @@index([tenantId])
+  @@index([farmerId])
+  @@index([region])
+  @@index([currentCropId])
+  // Survey number should be unique per farmer (prevents duplicate field creation)
+  @@unique([tenantId, farmerId, surveyNumber])
+}
+
+/**
+ * =============== Crop ===============
+ */
+model Crop {
+  cropId   String       @id @default(uuid())
+  tenantId String       @default("default")
+  name     String
+  category CropCategory @default(OTHER)
+
+  // Admin can disable crops; farmers should only see active crops.
+  isActive Boolean @default(true)
+
+  // Admin defaults (per acre) for auto-fill on plans
+  defaultYieldPerAcre Decimal? @db.Decimal(12, 2)
+  defaultCostPerAcre  Decimal? @db.Decimal(12, 2)
+  durationDays        Int?
+  marketPricePerUnit Decimal? @db.Decimal(12, 2)
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant          Tenant            @relation(fields: [tenantId], references: [tenantId])
+
+  plans           FieldSeasonPlan[]
+  currentOnFields Field[]           @relation("FieldCurrentCrop") // 👈 back-relation here
+
+  recommendedBy Recommendation[]     @relation("RecommendedCrop")
+  templates     CropSeasonTemplate[]
+
+  @@index([tenantId])
+}
+
+/**
+ * =============== Season ===============
+ */
+model Season {
+  seasonId  String     @id @default(uuid())
+  tenantId  String     @default("default")
+  name      SeasonType
+  startDate DateTime
+  endDate   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [tenantId])
+
+  plans           FieldSeasonPlan[]
+  recommendations Recommendation[]
+  templates       CropSeasonTemplate[]
+
+  @@index([tenantId])
+  @@unique([tenantId, name])
+}
+
+/**
+ * =============== FieldSeasonPlan ===============
+ */
+model FieldSeasonPlan {
+  planId        String          @id @default(uuid())
+  tenantId      String          @default("default")
+  fieldId       String
+  seasonId      String
+  cropId        String
+  expectedYield Decimal?        @db.Decimal(12, 2)
+  expectedCost  Decimal?        @db.Decimal(12, 2)
+  actualYield   Decimal?        @db.Decimal(12, 2)
+  actualCost    Decimal?        @db.Decimal(12, 2)
+  status        FieldPlanStatus
+  cropStatus    CropStatus      @default(SOWN)
+
+  // optional scheduling helpers
+  sowingDate      DateTime?
+  expectedEndDate DateTime?
+  actualEndDate   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [tenantId])
+  field  Field  @relation(fields: [fieldId], references: [fieldId])
+  season Season @relation(fields: [seasonId], references: [seasonId])
+  crop   Crop   @relation(fields: [cropId], references: [cropId])
+
+  // Allow multiple plans for the same field+season (crop history + re-adding after harvest)
+  // (We keep it indexed for query performance)
+  @@index([fieldId, seasonId])
+  @@index([tenantId])
+  @@index([fieldId])
+  @@index([seasonId])
+  @@index([cropId])
+  @@index([status])
+}
+
+/**
+ * =============== Recommendation ===============
+ */
+model Recommendation {
+  recommendationId  String               @id @default(uuid())
+  tenantId          String               @default("default")
+  fieldId           String
+  seasonId          String
+  recommendedCropId String
+  rationaleJson     Json
+  generatedAt       DateTime
+  source            RecommendationSource @default(AI)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant          Tenant @relation(fields: [tenantId], references: [tenantId])
+  field           Field  @relation(fields: [fieldId], references: [fieldId])
+  season          Season @relation(fields: [seasonId], references: [seasonId])
+  recommendedCrop Crop   @relation("RecommendedCrop", fields: [recommendedCropId], references: [cropId])
+
+  @@index([fieldId])
+  @@index([seasonId])
+  @@index([recommendedCropId])
+  @@index([generatedAt])
+}
+
+/**
+ * =============== Product ===============
+ */
+model Product {
+  productId String          @id @default(uuid())
+  tenantId  String          @default("default")
+  name      String
+  description String?
+  imageUrl    String?
+  category  ProductCategory @default(OTHER)
+  unit      String?
+  price     Decimal         @db.Decimal(12, 2)
+  stock     Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [tenantId])
+
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+
+  @@index([tenantId])
+}
+
+/**
+ * =============== Order ===============
+ */
+model Order {
+  orderId       String         @id @default(uuid())
+  tenantId      String         @default("default")
+  farmerId      String
+  cartId        String?
+  status        OrderStatus
+  total         Decimal        @db.Decimal(12, 2)
+  placedAt      DateTime       @default(now())
+  paymentMethod PaymentMethod?
+  paymentStatus PaymentStatus  @default(INITIATED)
+  paymentProvider PaymentProvider @default(OFFLINE)
+  providerPaymentId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant Tenant      @relation(fields: [tenantId], references: [tenantId])
+  farmer Farmer      @relation(fields: [farmerId], references: [farmerId])
+  items  OrderItem[]
+  cart   Cart?       @relation(fields: [cartId], references: [cartId])
+
+  @@index([farmerId])
+  @@index([status])
+  @@index([placedAt])
+}
+
+/**
+ * =============== OrderItem ===============
+ */
+model OrderItem {
+  orderItemId String  @id @default(uuid())
+  orderId     String
+  productId   String
+  qty         Int
+  unitPrice   Decimal @db.Decimal(12, 2)
+
+  // NEW: relate items to a specific field (so dashboard can show orders per field)
+  fieldId String?
+  field   Field?  @relation(fields: [fieldId], references: [fieldId])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  order   Order   @relation(fields: [orderId], references: [orderId])
+  product Product @relation(fields: [productId], references: [productId])
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([fieldId])
+}
+
+/**
+ * =============== Cart ===============
+ */
+model Cart {
+  cartId    String     @id @default(uuid())
+  tenantId  String     @default("default")
+  farmerId  String
+  status    CartStatus @default(ACTIVE) // ACTIVE, CHECKED_OUT
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+
+  // Relations
+  tenant Tenant     @relation(fields: [tenantId], references: [tenantId])
+  farmer Farmer     @relation(fields: [farmerId], references: [farmerId])
+  items  CartItem[]
+  orders Order[]
+
+  @@unique([farmerId, status]) // one active cart per farmer
+  @@index([tenantId])
+  @@index([farmerId])
+}
+
+/**
+ * =============== CartItem ===============
+ */
+model CartItem {
+  cartItemId String  @id @default(uuid())
+  cartId     String
+  productId  String
+  qty        Int
+  unitPrice  Decimal @db.Decimal(12, 2) // snapshot price at add time
+  fieldId    String? // optional — link to a field for the order later
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // Relations
+  cart    Cart    @relation(fields: [cartId], references: [cartId])
+  product Product @relation(fields: [productId], references: [productId])
+  field   Field?  @relation(fields: [fieldId], references: [fieldId])
+
+  @@unique([cartId, productId]) // one line per product in a cart
+  @@index([productId])
+  @@index([fieldId])
+}
+
+/**
+ * =============== Enum ===============
+ */
+enum CartStatus {
+  ACTIVE
+  CHECKED_OUT
+}
+
+/**
+ * =============== FieldSnapshot ===============
+ */
+model FieldSnapshot {
+  snapshotId      String        @id @default(uuid())
+  fieldId         String
+  at              DateTime?     @default(now())
+  soilMoisture    Float?
+  avgMoisture     Float?
+  lastPh          Float?
+  soilPH          Float?
+  soilTemp        Float?
+  nitrogenLevel   Float?
+  phosphorusLevel Float?
+  potassiumLevel  Float?
+  notes           String?
+  quality         FieldQuality?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  fields Field @relation(fields: [fieldId], references: [fieldId])
+
+  @@index([fieldId, at])
+}
+
+/**
+ * =============== Lease ===============
+ */
+model Lease {
+  leaseId        String         @id @default(uuid())
+  tenantId       String         @default("default")
+  fieldId        String
+  modelType      LeaseModelType
+  profitSharePct Decimal?       @db.Decimal(5, 2)
+  rentAmount     Decimal        @db.Decimal(12, 2)
+  startDate      DateTime
+  endDate        DateTime?
+  status         LeaseStatus    @default(PENDING)
+  approvalStatus LeaseApprovalStatus @default(PENDING)
+  approvedById   String?
+  approvedAt     DateTime?
+  cancelledAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [tenantId])
+  field Field @relation(fields: [fieldId], references: [fieldId])
+  approvedBy Farmer? @relation("LeaseApprovedBy", fields: [approvedById], references: [farmerId])
+
+  @@index([fieldId])
+  @@index([status])
+}
+
+
+/**
+ * =============== Wallet ===============
+ */
+model Wallet {
+  walletId String @id @default(uuid())
+  farmerId String @unique
+  tenantId String @default("default")
+  balance  Decimal @default(0) @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [tenantId])
+  farmer Farmer @relation(fields: [farmerId], references: [farmerId])
+  transactions WalletTransaction[]
+
+  @@index([tenantId])
+}
+
+model WalletTransaction {
+  txId      String @id @default(uuid())
+  walletId  String
+  tenantId  String @default("default")
+  type      WalletTxType
+  amount    Decimal @db.Decimal(12, 2)
+  referenceType String?
+  referenceId   String?
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [tenantId])
+  wallet Wallet @relation(fields: [walletId], references: [walletId])
+
+  @@index([tenantId])
+  @@index([walletId])
+  @@index([type])
+}
+
+model RefreshToken {
+  tokenId   String @id @default(uuid())
+  farmerId  String
+  tenantId  String @default("default")
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [tenantId])
+  farmer Farmer @relation(fields: [farmerId], references: [farmerId])
+
+  @@index([tenantId])
+  @@index([farmerId])
+}
+
+
+/**
+ * =============== Admin Templates (optional but recommended) ===============
+ */
+model CropSeasonTemplate {
+  templateId     String          @id @default(uuid())
+  cropId         String
+  seasonId       String
+  // optional matching dimensions
+  region         String?
+  soilType       SoilType?
+  irrigationType IrrigationType?
+
+  defaultYieldPerAcre Decimal? @db.Decimal(12, 2)
+  defaultCostPerAcre  Decimal? @db.Decimal(12, 2)
+  durationDays        Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  crop   Crop   @relation(fields: [cropId], references: [cropId])
+  season Season @relation(fields: [seasonId], references: [seasonId])
+
+  @@index([cropId, seasonId])
+  @@index([region])
+  @@index([soilType])
+  @@index([irrigationType])
+}
