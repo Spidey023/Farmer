@@ -4,7 +4,11 @@ import { useNavigate } from "react-router-dom";
 import type { RootState } from "../../store/redux";
 import type { AppDispatch } from "../../store/redux";
 import { api } from "../../lib/api";
-import { clearFarmer, setAuthenticated } from "../../store/redux/farmerSlice";
+import {
+  clearFarmer,
+  fetchFarmer,
+  setAuthenticated,
+} from "../../store/redux/farmerSlice";
 import { persistor } from "../../store/redux";
 import Info from "../../ui/Info";
 
@@ -51,10 +55,10 @@ const Profile = () => {
   const { fullName, username, email, phoneNumber, address } = farmerData;
   const wallet = (farmerData as any)?.wallet;
 
-  const onChange = (k: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setForm((p) => ({ ...p, [k]: e.target.value }));
-    };
+  // const onChange = (k: keyof typeof form) =>
+  //   (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  //     setForm((p) => ({ ...p, [k]: e.target.value }));
+  //   };
 
   const onSave = async () => {
     setSaveError("");
@@ -74,7 +78,9 @@ const Profile = () => {
       // refresh redux profile
       await dispatch<any>(fetchFarmer());
     } catch (e: any) {
-      setSaveError(e?.response?.data?.message ?? e?.message ?? "Failed to update profile");
+      setSaveError(
+        e?.response?.data?.message ?? e?.message ?? "Failed to update profile",
+      );
     } finally {
       setSaveLoading(false);
     }
@@ -138,16 +144,24 @@ const Profile = () => {
         <div className="rounded-2xl border bg-white p-6">
           <h3 className="text-sm font-semibold text-gray-700 mb-4">Wallet</h3>
           <div className="grid grid-cols-2 gap-4">
-            <Info label="Balance" value={wallet ? `₹${String(wallet.balance)}` : "—"} />
+            <Info
+              label="Balance"
+              value={wallet ? `₹${String(wallet.balance)}` : "—"}
+            />
             <Info label="Recent Tx" value={wallet?.transactions?.length ?? 0} />
           </div>
           {wallet?.transactions?.length ? (
             <div className="mt-4 space-y-2">
               {wallet.transactions.slice(0, 5).map((t: any) => (
-                <div key={t.txId} className="flex items-center justify-between text-sm text-gray-700">
+                <div
+                  key={t.txId}
+                  className="flex items-center justify-between text-sm text-gray-700"
+                >
                   <div className="font-medium">{t.type}</div>
                   <div>₹{String(t.amount)}</div>
-                  <div className="text-gray-500">{new Date(t.createdAt).toLocaleString()}</div>
+                  <div className="text-gray-500">
+                    {new Date(t.createdAt).toLocaleString()}
+                  </div>
                 </div>
               ))}
             </div>
@@ -164,14 +178,19 @@ const Profile = () => {
             Edit Profile
           </h3>
 
-          <form onSubmit={onSave} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form
+            onSubmit={onSave}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
             <div>
               <label className="text-xs uppercase tracking-wide text-gray-500">
                 Full Name
               </label>
               <input
                 value={form.fullName}
-                onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, fullName: e.target.value }))
+                }
                 className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2"
               />
             </div>
@@ -182,7 +201,9 @@ const Profile = () => {
               </label>
               <input
                 value={form.username}
-                onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, username: e.target.value }))
+                }
                 className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2"
               />
             </div>
@@ -193,7 +214,9 @@ const Profile = () => {
               </label>
               <input
                 value={form.phoneNumber}
-                onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, phoneNumber: e.target.value }))
+                }
                 className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2"
               />
             </div>
@@ -204,7 +227,9 @@ const Profile = () => {
               </label>
               <input
                 value={form.address}
-                onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, address: e.target.value }))
+                }
                 className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2"
               />
             </div>

@@ -5,7 +5,12 @@ import Card from "../../ui/Card";
 import Info from "../../ui/Info";
 import { api } from "../../lib/api";
 import { fetchFarmer } from "../../store/redux/farmerSlice";
-import type { Lease, LeaseCreateBody, LeaseModelType, LeaseStatus } from "../../types/type";
+import type {
+  Lease,
+  LeaseCreateBody,
+  LeaseModelType,
+  LeaseStatus,
+} from "../../types/type";
 
 const badge: Record<LeaseStatus, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -15,7 +20,7 @@ const badge: Record<LeaseStatus, string> = {
   CANCELLED: "bg-gray-200 text-gray-700",
 };
 
-const Lease = () => {
+const LeaseComponent = () => {
   const dispatch = useDispatch<any>();
   const farmer = useSelector((s: RootState) => s.farmer.data);
   const loading = useSelector((s: RootState) => s.farmer.loading);
@@ -90,8 +95,9 @@ const Lease = () => {
           ((raw.leaseStatus ?? raw.LeaseStatus) as LeaseStatus[] | undefined) ??
           null;
         const models =
-          ((raw.leaseModelTypes ?? raw.LeaseModelType) as LeaseModelType[] | undefined) ??
-          null;
+          ((raw.leaseModelTypes ?? raw.LeaseModelType) as
+            | LeaseModelType[]
+            | undefined) ?? null;
 
         if (Array.isArray(statuses) && statuses.length) {
           setLeaseStatusOptions(statuses);
@@ -107,12 +113,12 @@ const Lease = () => {
 
   // Fetch all leases from server (not only dashboard)
   useEffect(() => {
-    let mounted = true;
+    // let mounted = true;
     (async () => {
       await refreshLeases();
     })();
     return () => {
-      mounted = false;
+      // mounted = false;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -133,7 +139,9 @@ const Lease = () => {
       await refreshLeases();
       await dispatch(fetchFarmer());
     } catch (e: any) {
-      setErr(e?.response?.data?.message ?? e?.message ?? "Failed to delete lease");
+      setErr(
+        e?.response?.data?.message ?? e?.message ?? "Failed to delete lease",
+      );
     } finally {
       setActionBusy(null);
     }
@@ -164,7 +172,8 @@ const Lease = () => {
         ? list
         : list.filter((l) => l.status === statusFilter);
     return filtered.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }, [leases, statusFilter]);
 
@@ -172,16 +181,27 @@ const Lease = () => {
   // if the latest lease is still ACTIVE or PENDING.
   const latestLeaseByField = useMemo(() => {
     const map = new Map<string, Lease>();
+
     for (const l of leases ?? []) {
-      const prev = map.get(l.fieldId);
+      const fid =
+        typeof l.fieldId === "string" ? l.fieldId : l.fieldId?.fieldId;
+
+      if (!fid) continue;
+
+      const prev = map.get(fid);
+
       if (!prev) {
-        map.set(l.fieldId, l);
+        map.set(fid, l);
         continue;
       }
-      if (new Date(l.createdAt).getTime() > new Date(prev.createdAt).getTime()) {
-        map.set(l.fieldId, l);
+
+      if (
+        new Date(l.createdAt).getTime() > new Date(prev.createdAt).getTime()
+      ) {
+        map.set(fid, l);
       }
     }
+
     return map;
   }, [leases]);
 
@@ -199,7 +219,8 @@ const Lease = () => {
         modelType: String(fd.get("modelType") || "STANDARD") as LeaseModelType,
         rentAmount: String(fd.get("rentAmount") || "").trim(),
         profitSharePct:
-          fd.get("profitSharePct") === null || String(fd.get("profitSharePct")).trim() === ""
+          fd.get("profitSharePct") === null ||
+          String(fd.get("profitSharePct")).trim() === ""
             ? null
             : Number(fd.get("profitSharePct")),
         startDate: String(fd.get("startDate") || ""),
@@ -219,8 +240,13 @@ const Lease = () => {
       // Rule: 1 lease per field. If field already has a lease, user must edit.
       if (!editing) {
         const latest = latestLeaseByField.get(payload.fieldId);
-        if (latest && (latest.status === "ACTIVE" || latest.status === "PENDING")) {
-          throw new Error("This field already has an ACTIVE/PENDING lease. Please edit or cancel it first.");
+        if (
+          latest &&
+          (latest.status === "ACTIVE" || latest.status === "PENDING")
+        ) {
+          throw new Error(
+            "This field already has an ACTIVE/PENDING lease. Please edit or cancel it first.",
+          );
         }
       }
 
@@ -264,7 +290,10 @@ const Lease = () => {
           Post a Lease
         </h2>
 
-        <form onSubmit={onCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form
+          onSubmit={onCreate}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
           <div>
             <label className="text-xs uppercase tracking-wide text-gray-500">
               Field
@@ -278,22 +307,23 @@ const Lease = () => {
               <option value="" disabled>
                 Select field
               </option>
-            {fields.map((f) => {
-              const hasLease = fieldHasLease.has(f.fieldId);
-              const disabled = !editing && hasLease;
-              return (
-                <option key={f.fieldId} value={f.fieldId} disabled={disabled}>
-                  Survey #{f.surveyNumber} • {f.acres} acres
-                  {disabled ? " (Lease exists)" : ""}
-                </option>
-              );
-            })}
+              {fields.map((f) => {
+                const hasLease = fieldHasLease.has(f.fieldId);
+                const disabled = !editing && hasLease;
+                return (
+                  <option key={f.fieldId} value={f.fieldId} disabled={disabled}>
+                    Survey #{f.surveyNumber} • {f.acres} acres
+                    {disabled ? " (Lease exists)" : ""}
+                  </option>
+                );
+              })}
             </select>
-          {!editing && fieldHasLease.size === fields.length ? (
-            <p className="mt-1 text-xs text-gray-500">
-              All your fields already have a lease. Use the list below to edit.
-            </p>
-          ) : null}
+            {!editing && fieldHasLease.size === fields.length ? (
+              <p className="mt-1 text-xs text-gray-500">
+                All your fields already have a lease. Use the list below to
+                edit.
+              </p>
+            ) : null}
           </div>
 
           <div>
@@ -375,8 +405,12 @@ const Lease = () => {
             />
           </div>
 
-          {err ? <p className="text-sm text-red-600 md:col-span-2">{err}</p> : null}
-          {ok ? <p className="text-sm text-green-700 md:col-span-2">{ok}</p> : null}
+          {err ? (
+            <p className="text-sm text-red-600 md:col-span-2">{err}</p>
+          ) : null}
+          {ok ? (
+            <p className="text-sm text-green-700 md:col-span-2">{ok}</p>
+          ) : null}
 
           <div className="md:col-span-2 flex justify-end">
             <button
@@ -395,7 +429,9 @@ const Lease = () => {
           <h2 className="text-sm font-semibold text-gray-800">My Leases</h2>
 
           <div className="flex items-center gap-2">
-            <label className="text-xs uppercase tracking-wide text-gray-500">Status</label>
+            <label className="text-xs uppercase tracking-wide text-gray-500">
+              Status
+            </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
@@ -415,7 +451,9 @@ const Lease = () => {
           <p className="mt-4 text-sm text-gray-500">Loading leases...</p>
         ) : myLeases.length === 0 ? (
           <div className="mt-4 text-center border rounded-2xl p-10 bg-gray-50">
-            <p className="text-gray-500">No leases found for the selected filter.</p>
+            <p className="text-gray-500">
+              No leases found for the selected filter.
+            </p>
           </div>
         ) : (
           <div className="mt-4 space-y-4">
@@ -430,7 +468,9 @@ const Lease = () => {
                       Field
                     </p>
                     <p className="text-lg font-semibold text-gray-900">
-                      {lease.field?.surveyNumber ? `Survey #${lease.field.surveyNumber}` : "—"}
+                      {lease.fieldId?.surveyNumber
+                        ? `Survey #${lease.fieldId.surveyNumber}`
+                        : "—"}
                     </p>
                   </div>
 
@@ -450,7 +490,8 @@ const Lease = () => {
                   <Info
                     label="Profit Share"
                     value={
-                      lease.profitSharePct !== null && lease.profitSharePct !== undefined
+                      lease.profitSharePct !== null &&
+                      lease.profitSharePct !== undefined
                         ? `${lease.profitSharePct}%`
                         : "—"
                     }
@@ -496,7 +537,10 @@ const Lease = () => {
                 </div>
 
                 <div className="mt-4 text-xs text-gray-400">
-                  Lease ID: {lease.leaseId} • Field ID: {lease.fieldId}
+                  Lease ID: {lease.leaseId} • Field ID:{" "}
+                  {typeof lease.fieldId === "string"
+                    ? lease.fieldId
+                    : (lease.fieldId?.fieldId ?? "—")}
                 </div>
               </div>
             ))}
@@ -507,4 +551,4 @@ const Lease = () => {
   );
 };
 
-export default Lease;
+export default LeaseComponent;

@@ -40,6 +40,7 @@ app.use("/uploads", express.static(uploadsDir));
 const allowed = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  "http://farmer-frontend-1234.s3-website.us-east-2.amazonaws.com",
   // add your deployed frontend URL(s) here
   // "https://your-frontend.vercel.app",
 ];

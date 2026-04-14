@@ -37,7 +37,7 @@ const WeatherComponent = ({ crops }: { crops: Crop[] }) => {
         // Don’t throw here — throwing inside a component effect will crash the whole route
         // and show a white page. Instead, show a friendly message.
         setError(
-          "Unable to fetch weather (location permission blocked or server error)."
+          "Unable to fetch weather (location permission blocked or server error).",
         );
       }
     };
@@ -75,7 +75,7 @@ const WeatherComponent = ({ crops }: { crops: Crop[] }) => {
           </Card>
 
           {/* TODAY'S TASKS */}
-          <TodayTaskComponent crops={crops} />
+          <TodayTaskComponent />
 
           <Card className="h-full">
             <div className="flex items-center justify-between mb-4">

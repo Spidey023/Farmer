@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "http://localhost:3000/api/v1", // your backend URL
+  baseURL: "http://18.118.165.40:5000/api/v1", // your backend URL
   withCredentials: true, // required for JWT cookies
 });
 

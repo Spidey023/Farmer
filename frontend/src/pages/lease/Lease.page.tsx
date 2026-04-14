@@ -1,9 +1,9 @@
-import Lease from "../../components/lease/Lease";
+import LeaseComponent from "../../components/lease/Lease";
 
 const LeasePage = () => {
   return (
     <>
-      <Lease />
+      <LeaseComponent />
     </>
   );
 };

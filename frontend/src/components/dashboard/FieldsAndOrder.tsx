@@ -67,9 +67,9 @@ const FieldsAndOrder = ({
                   className={`text-xs font-medium px-3 py-1 rounded-full ${
                     order.status === "PENDING"
                       ? "bg-yellow-100 text-yellow-700"
-                      : order.status === "COMPLETED"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-700"
+                      : order.status === "DELIVERED"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-700"
                   }`}
                 >
                   {order.status.charAt(0) + order.status.slice(1).toLowerCase()}

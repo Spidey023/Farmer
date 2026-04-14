@@ -16,3 +16,5 @@ backend/prisma/dev.db
 # === System Files ===
 .DS_Store
 Thumbs.db
+
+.pem

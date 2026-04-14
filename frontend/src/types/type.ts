@@ -80,8 +80,22 @@ export type CartItem = {
 // Keep them as string unions for IntelliSense, but allow any string to avoid build breaks
 // if backend adds new values.
 export type LandType = "AGRICULTURAL" | "RESIDENTIAL" | "COMMERCIAL" | string;
-export type SoilType = "SANDY" | "CLAY" | "SILT" | "PEAT" | "CHALK" | "LOAM" | "OTHER" | string;
-export type IrrigationType = "NONE" | "DRIP" | "SPRINKLER" | "CANAL" | "BOREWELL" | string;
+export type SoilType =
+  | "SANDY"
+  | "CLAY"
+  | "SILT"
+  | "PEAT"
+  | "CHALK"
+  | "LOAM"
+  | "OTHER"
+  | string;
+export type IrrigationType =
+  | "NONE"
+  | "DRIP"
+  | "SPRINKLER"
+  | "CANAL"
+  | "BOREWELL"
+  | string;
 
 export type Field = {
   fieldId: string;
@@ -106,7 +120,13 @@ export type Field = {
   leases?: Lease[];
 };
 
-export type CropCategory = "VEGETABLE" | "FRUIT" | "GRAIN" | "PULSE" | "OILSEED" | string;
+export type CropCategory =
+  | "VEGETABLE"
+  | "FRUIT"
+  | "GRAIN"
+  | "PULSE"
+  | "OILSEED"
+  | string;
 
 export type Crop = {
   cropId: string;
@@ -119,7 +139,12 @@ export type Crop = {
   updatedAt: string; // ISO
 };
 
-export type FieldPlanStatus = "PLANNED" | "ACTIVE" | "COMPLETED" | "CANCELLED" | string;
+export type FieldPlanStatus =
+  | "PLANNED"
+  | "ACTIVE"
+  | "COMPLETED"
+  | "CANCELLED"
+  | string;
 export type CropStatus =
   | "SOWN"
   | "GROWING"
@@ -188,13 +213,19 @@ export type FieldSnapshot = {
 };
 
 // Lease
-export type LeaseStatus = "PENDING" | "ACTIVE" | "TERMINATED" | "EXPIRED" | "CANCELLED" | string;
+export type LeaseStatus =
+  | "PENDING"
+  | "ACTIVE"
+  | "TERMINATED"
+  | "EXPIRED"
+  | "CANCELLED"
+  | string;
 export type LeaseApprovalStatus = "PENDING" | "APPROVED" | "REJECTED" | string;
 export type LeaseModelType = "STANDARD" | "HYBRID" | string;
 
 export type Lease = {
   leaseId: string;
-  fieldId: string;
+  fieldId: Field;
   ownerFarmerId: string;
   status: LeaseStatus;
   approvalStatus?: LeaseApprovalStatus;

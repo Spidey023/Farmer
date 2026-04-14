@@ -1,10 +1,10 @@
-import Product from "../../components/product/Product";
+import ProductComponent from "../../components/product/Product";
 
 const ProductsPage = () => {
   return (
     <>
       {" "}
-      <Product />
+      <ProductComponent />
     </>
   );
 };

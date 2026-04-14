@@ -1,6 +1,6 @@
 import Card from "../../ui/Card";
 
-const TodayTaskComponent = ({ crops }: { crops: Crop[] }) => {
+const TodayTaskComponent = () => {
   return (
     <Card className="h-full">
       <h2 className="font-semibold mb-2 text-gray-900">Today&apos;s Tasks</h2>

@@ -14,7 +14,11 @@ type LeaseRow = {
   status: string;
   approvalStatus: string;
   createdAt: string;
-  field: { surveyNumber: number; acres: string; farmer: { username: string; email: string } };
+  field: {
+    surveyNumber: number;
+    acres: string;
+    farmer: { username: string; email: string };
+  };
 };
 
 type DashboardStats = {
@@ -118,7 +122,8 @@ const AdminPage = () => {
     try {
       setErr("");
       setMsg("");
-      if (!topupFarmerId || !topupAmount) throw new Error("farmer identifier and amount required");
+      if (!topupFarmerId || !topupAmount)
+        throw new Error("farmer identifier and amount required");
       const payload: any = { amount: topupAmount };
       if (topupFarmerId.includes("@")) payload.email = topupFarmerId;
       else payload.username = topupFarmerId;
@@ -134,7 +139,9 @@ const AdminPage = () => {
 
   const searchFarmers = async (q: string) => {
     try {
-      const res = await api.get(`/admin/farmers?query=${encodeURIComponent(q)}`);
+      const res = await api.get(
+        `/admin/farmers?query=${encodeURIComponent(q)}`,
+      );
       setFarmerResults(res.data.data ?? []);
     } catch {
       setFarmerResults([]);
@@ -143,7 +150,9 @@ const AdminPage = () => {
 
   const searchTransactions = async (q: string) => {
     try {
-      const res = await api.get(`/admin/wallet/transactions?query=${encodeURIComponent(q)}`);
+      const res = await api.get(
+        `/admin/wallet/transactions?query=${encodeURIComponent(q)}`,
+      );
       setTxs(res.data.data ?? []);
     } catch {
       setTxs([]);
@@ -154,7 +163,9 @@ const AdminPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Admin</h1>
-        <p className="text-sm text-gray-600 mt-1">Platform overview • leases • orders • wallets</p>
+        <p className="text-sm text-gray-600 mt-1">
+          Platform overview • leases • orders • wallets
+        </p>
       </div>
 
       {/* Stats */}
@@ -162,37 +173,53 @@ const AdminPage = () => {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           <Card>
             <div className="text-xs text-gray-500">Farmers</div>
-            <div className="text-xl font-bold text-gray-900">{stats.totalFarmers ?? 0}</div>
+            <div className="text-xl font-bold text-gray-900">
+              {stats.totalFarmers ?? 0}
+            </div>
           </Card>
           <Card>
             <div className="text-xs text-gray-500">Products</div>
-            <div className="text-xl font-bold text-gray-900">{stats.totalProducts ?? 0}</div>
+            <div className="text-xl font-bold text-gray-900">
+              {stats.totalProducts ?? 0}
+            </div>
           </Card>
           <Card>
             <div className="text-xs text-gray-500">Active Leases</div>
-            <div className="text-xl font-bold text-gray-900">{stats.activeLeases ?? 0}</div>
+            <div className="text-xl font-bold text-gray-900">
+              {stats.activeLeases ?? 0}
+            </div>
           </Card>
           <Card>
             <div className="text-xs text-gray-500">Pending Leases</div>
-            <div className="text-xl font-bold text-gray-900">{stats.pendingLeases ?? 0}</div>
+            <div className="text-xl font-bold text-gray-900">
+              {stats.pendingLeases ?? 0}
+            </div>
           </Card>
           <Card>
             <div className="text-xs text-gray-500">Orders</div>
-            <div className="text-xl font-bold text-gray-900">{stats.totalOrders ?? 0}</div>
+            <div className="text-xl font-bold text-gray-900">
+              {stats.totalOrders ?? 0}
+            </div>
           </Card>
           <Card>
             <div className="text-xs text-gray-500">Revenue</div>
-            <div className="text-xl font-bold text-gray-900">₹{String(stats.revenue ?? 0)}</div>
+            <div className="text-xl font-bold text-gray-900">
+              ₹{String(stats.revenue ?? 0)}
+            </div>
           </Card>
         </div>
       ) : null}
 
-      {msg ? <Info variant="success" message={msg} /> : null}
-      {err ? <Info variant="error" message={err} /> : null}
+      {msg ? <Info label="success" value={msg} /> : null}
+      {err ? <Info label="error" value={err} /> : null}
 
       <Card>
-        <h2 className="text-sm font-semibold text-gray-800 mb-4">Wallet Topup</h2>
-        <p className="text-xs text-gray-500 mb-3">Search farmer by ID / username / email and top up wallet.</p>
+        <h2 className="text-sm font-semibold text-gray-800 mb-4">
+          Wallet Topup
+        </h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Search farmer by ID / username / email and top up wallet.
+        </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
           <input
@@ -223,8 +250,12 @@ const AdminPage = () => {
                 }}
                 className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
               >
-                <div className="font-semibold text-gray-900">{f.fullName ?? f.username ?? "Farmer"}</div>
-                <div className="text-xs text-gray-600">{f.username} • {f.email} • {f.farmerId}</div>
+                <div className="font-semibold text-gray-900">
+                  {f.fullName ?? f.username ?? "Farmer"}
+                </div>
+                <div className="text-xs text-gray-600">
+                  {f.username} • {f.email} • {f.farmerId}
+                </div>
               </button>
             ))}
           </div>
@@ -258,7 +289,9 @@ const AdminPage = () => {
       </Card>
 
       <Card>
-        <h2 className="text-sm font-semibold text-gray-800 mb-4">Wallet Transactions</h2>
+        <h2 className="text-sm font-semibold text-gray-800 mb-4">
+          Wallet Transactions
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <input
             className="rounded-xl border border-gray-200 bg-white px-3 py-2"
@@ -291,16 +324,29 @@ const AdminPage = () => {
               </thead>
               <tbody>
                 {txs.map((t) => (
-                  <tr key={t.txId ?? t.walletTxId ?? `${t.walletId}-${t.createdAt}`} className="border-b last:border-0">
+                  <tr
+                    key={
+                      t.txId ?? t.walletTxId ?? `${t.walletId}-${t.createdAt}`
+                    }
+                    className="border-b last:border-0"
+                  >
                     <td className="py-2 pr-4">
-                      <div className="font-medium text-gray-900">{t.wallet?.farmer?.username ?? "—"}</div>
-                      <div className="text-xs text-gray-600">{t.wallet?.farmer?.email ?? "—"}</div>
-                      <div className="text-xs text-gray-500">{t.wallet?.farmerId ?? "—"}</div>
+                      <div className="font-medium text-gray-900">
+                        {t.wallet?.farmer?.username ?? "—"}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {t.wallet?.farmer?.email ?? "—"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {t.wallet?.farmerId ?? "—"}
+                      </div>
                     </td>
                     <td className="py-2 pr-4">{t.type}</td>
                     <td className="py-2 pr-4">₹{String(t.amount)}</td>
                     <td className="py-2 pr-4">{t.referenceType ?? "—"}</td>
-                    <td className="py-2 pr-4">{new Date(t.createdAt).toLocaleString()}</td>
+                    <td className="py-2 pr-4">
+                      {new Date(t.createdAt).toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -310,13 +356,18 @@ const AdminPage = () => {
       </Card>
 
       <Card>
-        <h2 className="text-sm font-semibold text-gray-800 mb-4">Pending Leases</h2>
+        <h2 className="text-sm font-semibold text-gray-800 mb-4">
+          Pending Leases
+        </h2>
         {leases.length === 0 ? (
           <p className="text-sm text-gray-500">No pending leases</p>
         ) : (
           <div className="space-y-3">
             {leases.map((l) => (
-              <div key={l.leaseId} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4">
+              <div
+                key={l.leaseId}
+                className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4"
+              >
                 <div className="text-sm">
                   <div className="font-semibold text-gray-900">
                     Survey #{l.field?.surveyNumber} • {l.field?.acres} acres
@@ -380,12 +431,20 @@ const AdminPage = () => {
                 {recentOrders.map((o) => (
                   <tr key={o.orderId} className="border-b last:border-0">
                     <td className="py-2 pr-4">
-                      <div className="font-medium text-gray-900">{o.orderId}</div>
-                      <div className="text-xs text-gray-500">{new Date(o.createdAt).toLocaleString()}</div>
+                      <div className="font-medium text-gray-900">
+                        {o.orderId}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(o.createdAt).toLocaleString()}
+                      </div>
                     </td>
                     <td className="py-2 pr-4">
-                      <div className="font-medium text-gray-900">{o.farmer?.fullName ?? o.farmer?.username ?? "—"}</div>
-                      <div className="text-xs text-gray-600">{o.farmer?.email ?? "—"}</div>
+                      <div className="font-medium text-gray-900">
+                        {o.farmer?.fullName ?? o.farmer?.username ?? "—"}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {o.farmer?.email ?? "—"}
+                      </div>
                     </td>
                     <td className="py-2 pr-4">₹{String(o.total)}</td>
                     <td className="py-2 pr-4">{o.status}</td>

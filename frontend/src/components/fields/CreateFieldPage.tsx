@@ -9,9 +9,9 @@ import { fetchFarmer } from "../../store/redux/farmerSlice";
 import type {
   CropStatus,
   FieldPlanStatus,
-  IrrigationType,
-  LandType,
-  SoilType,
+  // IrrigationType,
+  // LandType,
+  // SoilType,
   LeaseModelType,
 } from "../../types/type";
 
@@ -32,7 +32,10 @@ const CreateFieldPage = () => {
   const [irrigationTypes, setIrrigationTypes] = useState<string[]>([]);
   const [planStatuses, setPlanStatuses] = useState<string[]>([]);
   const [cropStatuses, setCropStatuses] = useState<string[]>([]);
-  const [leaseModels, setLeaseModels] = useState<string[]>(["STANDARD", "HYBRID"]);
+  const [leaseModels, setLeaseModels] = useState<string[]>([
+    "STANDARD",
+    "HYBRID",
+  ]);
 
   const [crops, setCrops] = useState<Crop[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
@@ -170,8 +173,8 @@ const CreateFieldPage = () => {
             leaseModel === "STANDARD"
               ? null
               : profitSharePctRaw
-              ? Number(profitSharePctRaw)
-              : null,
+                ? Number(profitSharePctRaw)
+                : null,
           startDate,
           endDate: endDate || null,
           notes: notes || null,
@@ -182,7 +185,11 @@ const CreateFieldPage = () => {
       dispatch(fetchFarmer());
       navigate("/fields/fields-list");
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? "Failed to create field");
+      setError(
+        err?.response?.data?.message ??
+          err?.message ??
+          "Failed to create field",
+      );
     } finally {
       setLoading(false);
     }
@@ -193,7 +200,8 @@ const CreateFieldPage = () => {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Create Field</h1>
         <p className="text-sm text-gray-600 mt-1">
-          Add your land details, optional crop season plan, and optionally post a lease.
+          Add your land details, optional crop season plan, and optionally post
+          a lease.
         </p>
       </div>
 
@@ -307,7 +315,9 @@ const CreateFieldPage = () => {
           {/* Season plan */}
           <div className="border-t pt-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-800">Season Plan (optional)</h2>
+              <h2 className="text-sm font-semibold text-gray-800">
+                Season Plan (optional)
+              </h2>
               <label className="text-sm text-gray-600 flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -321,7 +331,9 @@ const CreateFieldPage = () => {
             {enablePlan ? (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Season</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Season
+                  </label>
                   <select
                     value={seasonId}
                     onChange={(e) => setSeasonId(e.target.value)}
@@ -340,7 +352,9 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Crop</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Crop
+                  </label>
                   <select
                     value={planCropId}
                     onChange={(e) => setPlanCropId(e.target.value)}
@@ -359,7 +373,9 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Sowing Date (optional)</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Sowing Date (optional)
+                  </label>
                   <input
                     type="date"
                     value={sowingDate}
@@ -369,10 +385,14 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Plan Status</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Plan Status
+                  </label>
                   <select
                     value={planStatus}
-                    onChange={(e) => setPlanStatus(e.target.value as FieldPlanStatus)}
+                    onChange={(e) =>
+                      setPlanStatus(e.target.value as FieldPlanStatus)
+                    }
                     className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2"
                   >
                     {planStatuses.map((s) => (
@@ -384,10 +404,14 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Crop Status</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Crop Status
+                  </label>
                   <select
                     value={cropStatus}
-                    onChange={(e) => setCropStatus(e.target.value as CropStatus)}
+                    onChange={(e) =>
+                      setCropStatus(e.target.value as CropStatus)
+                    }
                     className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2"
                   >
                     {cropStatuses.map((s) => (
@@ -399,7 +423,9 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Expected Yield (optional)</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Expected Yield (optional)
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -411,7 +437,9 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Expected Cost (optional)</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Expected Cost (optional)
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -428,7 +456,9 @@ const CreateFieldPage = () => {
           {/* Lease */}
           <div className="border-t pt-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-800">Lease (optional)</h2>
+              <h2 className="text-sm font-semibold text-gray-800">
+                Lease (optional)
+              </h2>
               <label className="text-sm text-gray-600 flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -442,10 +472,14 @@ const CreateFieldPage = () => {
             {enableLease ? (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Model</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Model
+                  </label>
                   <select
                     value={leaseModel}
-                    onChange={(e) => setLeaseModel(e.target.value as LeaseModelType)}
+                    onChange={(e) =>
+                      setLeaseModel(e.target.value as LeaseModelType)
+                    }
                     className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2"
                   >
                     {leaseModels.map((m) => (
@@ -457,7 +491,9 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Rent Amount (₹)</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Rent Amount (₹)
+                  </label>
                   <input
                     name="rentAmount"
                     placeholder="e.g. 25000"
@@ -466,7 +502,9 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Profit Share (%)</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Profit Share (%)
+                  </label>
                   <input
                     name="profitSharePct"
                     type="number"
@@ -478,7 +516,9 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Start Date</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Start Date
+                  </label>
                   <input
                     name="leaseStart"
                     type="date"
@@ -487,7 +527,9 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-wide text-gray-500">End Date (optional)</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    End Date (optional)
+                  </label>
                   <input
                     name="leaseEnd"
                     type="date"
@@ -496,7 +538,9 @@ const CreateFieldPage = () => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="text-xs uppercase tracking-wide text-gray-500">Notes (optional)</label>
+                  <label className="text-xs uppercase tracking-wide text-gray-500">
+                    Notes (optional)
+                  </label>
                   <textarea
                     name="leaseNotes"
                     rows={3}

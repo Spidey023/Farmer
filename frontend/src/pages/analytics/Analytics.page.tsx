@@ -81,12 +81,12 @@ const AnalyticsPage = () => {
     actual: "#16a34a", // green-600
   };
 
-  const seasonColorMap: Record<string, string> = {
-    KHARIF: "#16a34a", // green
-    RABI: "#2563eb", // blue
-    SUMMER: "#ea580c", // orange
-    WINTER: "#7c3aed", // purple
-  };
+  // const seasonColorMap: Record<string, string> = {
+  //   KHARIF: "#16a34a", // green
+  //   RABI: "#2563eb", // blue
+  //   SUMMER: "#ea580c", // orange
+  //   WINTER: "#7c3aed", // purple
+  // };
 
   return (
     <div className="space-y-6">

@@ -20,7 +20,11 @@ const ProductCard = ({
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden">
       <div className="h-40 w-full bg-gray-50 flex items-center justify-center text-gray-400">
         {p.imageUrl ? (
-          <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" />
+          <img
+            src={p.imageUrl}
+            alt={p.name}
+            className="h-full w-full object-cover"
+          />
         ) : (
           <span className="text-sm">No image</span>
         )}
@@ -37,7 +41,9 @@ const ProductCard = ({
         </div>
 
         {p.description ? (
-          <p className="text-sm text-gray-600 mt-3 line-clamp-2">{p.description}</p>
+          <p className="text-sm text-gray-600 mt-3 line-clamp-2">
+            {p.description}
+          </p>
         ) : null}
 
         <button
@@ -52,7 +58,7 @@ const ProductCard = ({
   );
 };
 
-const Product = () => {
+const ProductComponent = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { items, loading, error } = useSelector((s: RootState) => s.products);
 
@@ -69,7 +75,7 @@ const Product = () => {
     return items.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
-        (p.category ?? "").toLowerCase().includes(q)
+        (p.category ?? "").toLowerCase().includes(q),
     );
   }, [items, query]);
 
@@ -124,4 +130,4 @@ const Product = () => {
   );
 };
 
-export default Product;
+export default ProductComponent;
